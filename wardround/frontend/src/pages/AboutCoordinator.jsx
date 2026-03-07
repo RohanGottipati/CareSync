@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -63,6 +64,12 @@ const steps = [
 
 export default function AboutCoordinator() {
   const navigate = useNavigate();
+  const { loginWithRedirect } = useAuth0();
+
+  const handleSignup = () => {
+    localStorage.setItem('signup_role', 'coordinator');
+    loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } });
+  };
 
   return (
     <div className="bg-white min-h-screen">
@@ -114,10 +121,10 @@ export default function AboutCoordinator() {
             className="flex flex-wrap gap-3 justify-center"
           >
             <button
-              onClick={() => navigate("/coordinator")}
+              onClick={handleSignup}
               className="inline-flex items-center gap-2 bg-white hover:bg-indigo-50 text-indigo-700 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200"
             >
-              Open Admin Suite <ArrowRight size={16} />
+              Sign Up as Coordinator <ArrowRight size={16} />
             </button>
             <button className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200">
               Learn More <ChevronRight size={16} />
@@ -212,10 +219,10 @@ export default function AboutCoordinator() {
               check.
             </p>
             <button
-              onClick={() => navigate("/coordinator")}
+              onClick={handleSignup}
               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200"
             >
-              Open Admin Suite <ArrowRight size={16} />
+              Sign Up as Coordinator <ArrowRight size={16} />
             </button>
           </motion.div>
 
@@ -259,10 +266,10 @@ export default function AboutCoordinator() {
             deliver exceptional care at scale.
           </p>
           <button
-            onClick={() => navigate("/coordinator")}
+            onClick={handleSignup}
             className="inline-flex items-center gap-2 bg-white hover:bg-indigo-50 text-indigo-700 font-semibold text-sm px-6 py-3 rounded-lg transition-colors duration-200"
           >
-            Access Admin Suite <ArrowRight size={16} />
+            Get Started as Coordinator <ArrowRight size={16} />
           </button>
         </motion.div>
       </section>
