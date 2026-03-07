@@ -28,8 +28,9 @@ export default function LandingPage() {
                 top: 0,
                 left: 0,
                 width: '100%',
+                boxSizing: 'border-box',
                 zIndex: 10,
-                padding: '1.5rem 2rem',
+                padding: '1.5rem 4rem', // Increased right padding to pull it away from the edge
                 display: 'flex',
                 justifyContent: 'flex-end',
                 pointerEvents: 'none',
