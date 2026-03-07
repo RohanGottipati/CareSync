@@ -1,8 +1,18 @@
+import { useAuth0 } from '@auth0/auth0-react';
+import { useCallback } from 'react';
+
 const API_BASE = 'http://localhost:3001/api';
 
-export function createApiFetcher(getToken) {
-    return async function fetchWithAuth(endpoint, options = {}) {
-        const token = await getToken();
+export function useApi() {
+    const { getAccessTokenSilently } = useAuth0();
+
+    const fetchWithAuth = useCallback(async (endpoint, options = {}) => {
+        const token = await getAccessTokenSilently({
+            authorizationParams: {
+                audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+            },
+        });
+
         const res = await fetch(`${API_BASE}${endpoint}`, {
             ...options,
             headers: {
@@ -18,5 +28,7 @@ export function createApiFetcher(getToken) {
         }
 
         return res.json();
-    };
+    }, [getAccessTokenSilently]);
+
+    return { fetchWithAuth };
 }
