@@ -154,8 +154,28 @@ function AppContent() {
                     <LandingPage />
                 ) : !role ? (
                     <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-                        <h2>No Role Assigned</h2>
-                        <p>Your account does not have a role assigned. Please contact your administrator.</p>
+                        <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Role Assigned</h2>
+                        <p style={{ color: '#64748b', marginBottom: '2rem' }}>
+                            Your account does not have a role assigned. Please contact your administrator or update your Auth0 settings to assign the 'coordinator', 'psw', or 'family' role.
+                        </p>
+                        <button
+                            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                            style={{
+                                padding: '0.6rem 2rem',
+                                fontSize: '1rem',
+                                fontWeight: 600,
+                                background: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'background 0.2s',
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.background = '#2563eb'}
+                            onMouseOut={(e) => e.currentTarget.style.background = '#3b82f6'}
+                        >
+                            Log Out
+                        </button>
                     </div>
                 ) : (
                     <Routes>
