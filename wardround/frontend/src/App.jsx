@@ -5,7 +5,7 @@ import PSWDashboard from './pages/PSWDashboard';
 import FamilyPortal from './pages/FamilyPortal';
 import CoordinatorDashboard from './pages/CoordinatorDashboard';
 import LandingPage from './pages/LandingPage';
-
+import LoginPage from './pages/LoginPage';
 const ROLES_CLAIM = 'https://wardround.app/roles';
 
 function getUserRole(user) {
@@ -71,36 +71,10 @@ function AppContent() {
         );
     }
 
-    if (!isAuthenticated) {
-        return <LandingPage />;
-    }
+    // Determine role early to simplify routing logic
+    const role = user ? getUserRole(user) : null;
 
-    const role = getUserRole(user);
-
-    if (!role) {
-        return (
-            <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <h2>No Role Assigned</h2>
-                <p>Your account does not have a role assigned. Please contact your administrator.</p>
-                <button
-                    onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
-                    style={{
-                        marginTop: '1rem',
-                        padding: '0.5rem 1.5rem',
-                        background: '#ef4444',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                    }}
-                >
-                    Log Out
-                </button>
-            </div>
-        );
-    }
-
+    // Build nav links for logged-in users
     const navLinks = [];
     if (role === 'psw' || role === 'coordinator') {
         navLinks.push({ to: '/', label: 'PSW Dashboard' });
@@ -114,72 +88,95 @@ function AppContent() {
 
     return (
         <BrowserRouter>
-            <nav style={{
-                padding: '0.75rem 1.5rem',
-                background: 'var(--primary)',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-            }}>
-                <ul style={{ display: 'flex', gap: '1.25rem', listStyle: 'none', margin: 0, padding: 0 }}>
-                    {navLinks.map(({ to, label }) => (
-                        <li key={to}>
-                            <Link to={to} style={{ color: 'white', textDecoration: 'none', fontWeight: 500 }}>
-                                {label}
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{ fontSize: '0.85rem', opacity: 0.85 }}>
-                        {user?.name || user?.email} ({role})
-                    </span>
-                    <button
-                        onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
-                        style={{
-                            padding: '0.4rem 1rem',
-                            background: 'rgba(255,255,255,0.15)',
-                            color: 'white',
-                            border: '1px solid rgba(255,255,255,0.3)',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                        }}
-                    >
-                        Log Out
-                    </button>
-                </div>
-            </nav>
-            <main style={{ padding: '2rem' }}>
+            {isAuthenticated && (
+                <nav style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--primary)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}>
+                    <ul style={{ display: 'flex', gap: '1.25rem', listStyle: 'none', margin: 0, padding: 0 }}>
+                        {navLinks.map(({ to, label }) => (
+                            <li key={to}>
+                                <Link to={to} style={{ color: 'white', textDecoration: 'none', fontWeight: 500 }}>
+                                    {label}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <span style={{ fontSize: '0.85rem', opacity: 0.85 }}>
+                            {user?.name || user?.email} ({role || 'No Role'})
+                        </span>
+                        <button
+                            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                            style={{
+                                padding: '0.4rem 1rem',
+                                background: 'rgba(255,255,255,0.15)',
+                                color: 'white',
+                                border: '1px solid rgba(255,255,255,0.3)',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                            }}
+                        >
+                            Log Out
+                        </button>
+                    </div>
+                </nav>
+            )}
+
+            <main style={{ padding: isAuthenticated ? '2rem' : '0' }}>
                 <Routes>
-                    <Route
-                        path="/"
-                        element={
-                            <ProtectedRoute role={role} allowedRoles={['psw', 'coordinator']}>
-                                <PSWDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
+                    {/* Public Routes */}
+                    <Route path="/landing" element={
+                        isAuthenticated ? <Navigate to={ROLE_CONFIG[role]?.defaultPath || '/'} replace /> : <LandingPage />
+                    } />
+                    <Route path="/login" element={
+                        <LoginPage />
+                    } />
+
+                    {/* Root redirection based on auth state */}
+                    <Route path="/" element={
+                        !isAuthenticated ? <Navigate to="/landing" replace /> :
+                            !role ? (
+                                <div style={{ padding: '2rem', textAlign: 'center' }}>
+                                    <h2>No Role Assigned</h2>
+                                    <p>Your account does not have a role assigned. Please contact your administrator.</p>
+                                </div>
+                            ) : (
+                                <ProtectedRoute role={role} allowedRoles={['psw', 'coordinator']}>
+                                    <PSWDashboard />
+                                </ProtectedRoute>
+                            )
+                    } />
+
+                    {/* Protected Routes */}
                     <Route
                         path="/coordinator"
                         element={
-                            <ProtectedRoute role={role} allowedRoles={['coordinator']}>
-                                <CoordinatorDashboard />
-                            </ProtectedRoute>
+                            !isAuthenticated ? <Navigate to="/login" replace /> :
+                                <ProtectedRoute role={role} allowedRoles={['coordinator']}>
+                                    <CoordinatorDashboard />
+                                </ProtectedRoute>
                         }
                     />
                     <Route
                         path="/family"
                         element={
-                            <ProtectedRoute role={role} allowedRoles={['family', 'coordinator']}>
-                                <FamilyPortal />
-                            </ProtectedRoute>
+                            !isAuthenticated ? <Navigate to="/login" replace /> :
+                                <ProtectedRoute role={role} allowedRoles={['family', 'coordinator']}>
+                                    <FamilyPortal />
+                                </ProtectedRoute>
                         }
                     />
+
+                    {/* Fallback routing */}
                     <Route
                         path="*"
-                        element={<Navigate to={ROLE_CONFIG[role]?.defaultPath || '/'} replace />}
+                        element={<Navigate to="/" replace />}
                     />
                 </Routes>
             </main>
