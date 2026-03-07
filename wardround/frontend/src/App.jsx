@@ -6,6 +6,9 @@ import PSWDashboard from './pages/PSWDashboard';
 import FamilyPortal from './pages/FamilyPortal';
 import CoordinatorDashboard from './pages/CoordinatorDashboard';
 import LandingPage from './pages/LandingPage';
+import AboutPSW from './pages/AboutPSW';
+import AboutFamily from './pages/AboutFamily';
+import AboutCoordinator from './pages/AboutCoordinator';
 import { NavBar } from './components/NavBar';
 
 const ROLES_CLAIM = 'https://wardround.app/roles';
@@ -130,6 +133,10 @@ function AppContent() {
 
     const navItems = [];
     if (!isAuthenticated) {
+        navItems.push({ url: '/', name: 'Home', icon: Home });
+        navItems.push({ url: '/psw', name: 'Psw', icon: LayoutDashboard });
+        navItems.push({ url: '/family', name: 'Family', icon: Home });
+        navItems.push({ url: '/coordinator', name: 'Coordinators', icon: Users });
         navItems.push({
             name: 'Log In',
             icon: LogIn,
@@ -197,7 +204,13 @@ function AppContent() {
 
             <main style={isAuthenticated ? { padding: '2rem', paddingTop: '6rem' } : { padding: 0 }}>
                 {!isAuthenticated ? (
-                    <LandingPage />
+                    <Routes>
+                        <Route path="/" element={<LandingPage />} />
+                        <Route path="/psw" element={<AboutPSW />} />
+                        <Route path="/family" element={<AboutFamily />} />
+                        <Route path="/coordinator" element={<AboutCoordinator />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
                 ) : assignError ? (
                     <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
                         <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Role Assignment Failed</h2>
