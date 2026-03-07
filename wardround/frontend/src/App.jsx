@@ -80,6 +80,10 @@ function AppContent() {
     const navItems = [];
     if (!isAuthenticated) {
         // Public Nav Items
+        navItems.push({ url: '/', name: 'Home', icon: Home });
+        navItems.push({ url: '/psw', name: 'Psw', icon: LayoutDashboard });
+        navItems.push({ url: '/family', name: 'Family', icon: Home });
+        navItems.push({ url: '/coordinator', name: 'Coordinators', icon: Users });
         navItems.push({
             name: 'Log In',
             icon: LogIn,

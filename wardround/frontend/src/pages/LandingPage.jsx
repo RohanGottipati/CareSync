@@ -37,12 +37,6 @@ export default function LandingPage() {
                 pointerEvents: 'none', // Allow clicking the 3D model if wanted
             }}>
                 <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <h1 style={{ fontSize: '4rem', marginBottom: '0.5rem', fontWeight: 800, textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
-                        WardRound
-                    </h1>
-                    <p style={{ fontSize: '1.25rem', opacity: 0.9, maxWidth: '500px', marginBottom: '3rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                        AI-powered care coordination for PSWs, families, and coordinators.
-                    </p>
                 </div>
             </div>
         </div>
