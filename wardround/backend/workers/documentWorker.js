@@ -9,24 +9,26 @@ import * as backboard from '../services/backboard.js';
 import { getClientThread, setClientThread } from '../db.js';
 
 documentQueue.process(async (job) => {
-  const { key, clientId, threadId: jobThreadId } = job.data;
-  const filename = key.split('/').pop() || 'document.pdf';
+    const { key, clientId, threadId: jobThreadId } = job.data;
+    const filename = key.split('/').pop() || 'document.pdf';
 
-  const buffer = await getFromVultr(key);
-  let threadId = jobThreadId;
-  if (!threadId && clientId) {
-    threadId = getClientThread(clientId, 'handoff');
-    if (!threadId && backboard.getAssistantId('handoff')) {
-      const created = await backboard.createThread(backboard.getAssistantId('handoff'));
-      threadId = created.thread_id;
-      setClientThread(clientId, 'handoff', threadId);
+    const buffer = await getFromVultr(key);
+
+    let threadId = jobThreadId;
+    if (!threadId && clientId) {
+        threadId = await getClientThread(clientId, 'handoff');
+        if (!threadId && backboard.getAssistantId('handoff')) {
+            const created = await backboard.createThread(backboard.getAssistantId('handoff'));
+            threadId = created.thread_id;
+            await setClientThread(clientId, 'handoff', threadId);
+        }
     }
-  }
-  if (threadId) {
-    await backboard.uploadDoc(threadId, buffer, filename);
-  }
+
+    if (threadId) {
+        await backboard.uploadDoc(threadId, buffer, filename);
+    }
 });
 
 export function startWorker() {
-  console.log('Document worker started (Bull + Redis).');
+    console.log('Document worker started (Bull + Redis).');
 }

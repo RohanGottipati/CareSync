@@ -1,8 +1,135 @@
+/**
+ * Clients & Assignments — coordinator only (except GET /my-clients for PSWs).
+ *
+ * Coordinator routes:
+ *   GET    /api/clients                    — list all clients
+ *   POST   /api/clients                    — create a client
+ *   PUT    /api/clients/:id                — update a client
+ *   GET    /api/clients/assignments        — list all assignments
+ *   POST   /api/clients/assignments        — assign a PSW to a client for a shift
+ *   DELETE /api/clients/assignments/:id    — remove an assignment
+ *
+ * PSW route:
+ *   GET    /api/clients/my-clients         — list clients assigned to the logged-in PSW right now
+ */
+
 import express from 'express';
+import {
+    getAllClients,
+    getClientById,
+    createClient,
+    updateClient,
+    createAssignment,
+    getAllAssignments,
+    getActiveAssignmentsForPsw,
+    deleteAssignment,
+} from '../db.js';
+import { requireRole } from '../middleware/auth.js';
+
 const router = express.Router();
 
-// CRUD for client profiles (coordinator only)
-router.get('/', (req, res) => res.json({ clients: [] }));
-router.post('/', (req, res) => res.json({ message: 'Client created' }));
+// ── PSW: get my currently assigned clients ────────────────────────────────────
+router.get('/my-clients', requireRole('psw', 'coordinator'), async (req, res) => {
+    try {
+        const assignments = await getActiveAssignmentsForPsw(req.user.id);
+        res.json({ clients: assignments });
+    } catch (err) {
+        console.error('my-clients error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: list all clients ─────────────────────────────────────────────
+router.get('/', requireRole('coordinator'), async (req, res) => {
+    try {
+        const clients = await getAllClients();
+        res.json({ clients });
+    } catch (err) {
+        console.error('GET /clients error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: get single client ────────────────────────────────────────────
+router.get('/:id', requireRole('coordinator'), async (req, res) => {
+    try {
+        const client = await getClientById(req.params.id);
+        if (!client) return res.status(404).json({ error: 'Client not found' });
+        res.json({ client });
+    } catch (err) {
+        console.error('GET /clients/:id error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: create client ────────────────────────────────────────────────
+router.post('/', requireRole('coordinator'), async (req, res) => {
+    try {
+        const { name, dateOfBirth, medications, conditions, notes } = req.body || {};
+        if (!name) return res.status(400).json({ error: 'name required' });
+        const client = await createClient({ name, dateOfBirth, medications, conditions, notes });
+        res.status(201).json({ client });
+    } catch (err) {
+        console.error('POST /clients error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: update client ────────────────────────────────────────────────
+router.put('/:id', requireRole('coordinator'), async (req, res) => {
+    try {
+        const { name, dateOfBirth, medications, conditions, notes } = req.body || {};
+        if (!name) return res.status(400).json({ error: 'name required' });
+        const client = await updateClient(req.params.id, { name, dateOfBirth, medications, conditions, notes });
+        if (!client) return res.status(404).json({ error: 'Client not found' });
+        res.json({ client });
+    } catch (err) {
+        console.error('PUT /clients/:id error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: list all assignments ─────────────────────────────────────────
+router.get('/assignments/all', requireRole('coordinator'), async (req, res) => {
+    try {
+        const assignments = await getAllAssignments();
+        res.json({ assignments });
+    } catch (err) {
+        console.error('GET /clients/assignments error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: assign PSW to client for a shift ─────────────────────────────
+router.post('/assignments', requireRole('coordinator'), async (req, res) => {
+    try {
+        const { clientId, pswUserId, shiftStart, shiftEnd } = req.body || {};
+        if (!clientId || !pswUserId || !shiftStart || !shiftEnd) {
+            return res.status(400).json({ error: 'clientId, pswUserId, shiftStart, shiftEnd required' });
+        }
+        const assignment = await createAssignment({
+            clientId,
+            pswUserId,
+            shiftStart,
+            shiftEnd,
+            setBy: req.user.id,
+        });
+        res.status(201).json({ assignment });
+    } catch (err) {
+        console.error('POST /clients/assignments error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: delete assignment ────────────────────────────────────────────
+router.delete('/assignments/:id', requireRole('coordinator'), async (req, res) => {
+    try {
+        await deleteAssignment(req.params.id);
+        res.json({ message: 'Assignment removed' });
+    } catch (err) {
+        console.error('DELETE /clients/assignments/:id error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 export default router;
