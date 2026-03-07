@@ -2,6 +2,7 @@
   "name": "wardround-backend",
   "version": "1.0.0",
   "description": "WardRound backend — Node.js + Express",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

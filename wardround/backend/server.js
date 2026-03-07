@@ -8,6 +8,7 @@ import visitsRouter from './routes/visits.js';
 import familyRouter from './routes/family.js';
 import documentsRouter from './routes/documents.js';
 import clientsRouter from './routes/clients.js';
+import rolesRouter from './routes/roles.js';
 
 const app = express();
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000' }));
@@ -18,6 +19,7 @@ app.use('/api/visits', authMiddleware, extractUser, requireRole('psw'), visitsRo
 app.use('/api/family', authMiddleware, extractUser, requireRole('psw', 'family', 'coordinator'), familyRouter);
 app.use('/api/documents', authMiddleware, extractUser, requireRole('psw', 'family', 'coordinator'), documentsRouter);
 app.use('/api/clients', authMiddleware, extractUser, requireRole('coordinator'), clientsRouter);
+app.use('/api/assign-role', authMiddleware, extractUser, rolesRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

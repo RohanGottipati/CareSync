@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Home, Users, LayoutDashboard, LogIn } from 'lucide-react';
@@ -9,6 +9,7 @@ import LandingPage from './pages/LandingPage';
 import { NavBar } from './components/NavBar';
 
 const ROLES_CLAIM = 'https://wardround.app/roles';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 function getUserRole(user) {
     const roles = user?.[ROLES_CLAIM] || [];
@@ -33,7 +34,57 @@ function ProtectedRoute({ role, allowedRoles, children }) {
 }
 
 function AppContent() {
-    const { isAuthenticated, isLoading, user, logout, loginWithRedirect, error } = useAuth0();
+    const { isAuthenticated, isLoading, user, logout, loginWithRedirect, error, getAccessTokenSilently } = useAuth0();
+    const [assigningRole, setAssigningRole] = useState(false);
+    const [assignError, setAssignError] = useState(null);
+    const [assignedRole, setAssignedRole] = useState(null);
+
+    const assignRole = useCallback(async () => {
+        const pendingRole = localStorage.getItem('signup_role');
+        if (!pendingRole) return;
+
+        setAssigningRole(true);
+        setAssignError(null);
+
+        try {
+            const token = await getAccessTokenSilently();
+            const res = await fetch(`${API_URL}/api/assign-role`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ role: pendingRole }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `Failed to assign role (${res.status})`);
+            }
+
+            localStorage.removeItem('signup_role');
+            setAssignedRole(pendingRole);
+
+            await getAccessTokenSilently({ cacheMode: 'off' });
+
+            window.location.reload();
+        } catch (err) {
+            console.error('Role assignment failed:', err);
+            setAssignError(err.message);
+            localStorage.removeItem('signup_role');
+        } finally {
+            setAssigningRole(false);
+        }
+    }, [getAccessTokenSilently]);
+
+    useEffect(() => {
+        if (isAuthenticated && !isLoading && !getUserRole(user)) {
+            const pendingRole = localStorage.getItem('signup_role');
+            if (pendingRole) {
+                assignRole();
+            }
+        }
+    }, [isAuthenticated, isLoading, user, assignRole]);
 
     if (error) {
         return (
@@ -58,35 +109,33 @@ function AppContent() {
         );
     }
 
-    if (isLoading) {
+    if (isLoading || assigningRole) {
         return (
             <div style={{
                 minHeight: '100vh',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '1.2rem',
                 color: '#64748b',
+                gap: '0.5rem',
             }}>
-                Loading...
+                <span>{assigningRole ? 'Setting up your account...' : 'Loading...'}</span>
             </div>
         );
     }
 
-    // Determine Role
-    const role = getUserRole(user);
+    const role = assignedRole || getUserRole(user);
 
-    // Build Nav Items based on authentication
     const navItems = [];
     if (!isAuthenticated) {
-        // Public Nav Items
         navItems.push({
             name: 'Log In',
             icon: LogIn,
             action: () => loginWithRedirect()
         });
     } else {
-        // Authenticated Nav Items
         if (role === 'psw' || role === 'coordinator') {
             navItems.push({ url: '/', name: 'PSW Dashboard', icon: LayoutDashboard });
         }
@@ -100,7 +149,6 @@ function AppContent() {
 
     return (
         <BrowserRouter>
-            {/* User Info & Logout Button - Fixed Top Right (Only show if authenticated and has role) */}
             {isAuthenticated && role && (
                 <div style={{
                     position: 'fixed',
@@ -145,18 +193,36 @@ function AppContent() {
                 </div>
             )}
 
-            {/* The Animated Navigation Bar - Rendered for EVERYONE */}
             <NavBar items={navItems} />
 
             <main style={isAuthenticated ? { padding: '2rem', paddingTop: '6rem' } : { padding: 0 }}>
-                {/* Router Body */}
                 {!isAuthenticated ? (
                     <LandingPage />
+                ) : assignError ? (
+                    <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
+                        <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Role Assignment Failed</h2>
+                        <p style={{ color: '#ef4444', marginBottom: '2rem' }}>{assignError}</p>
+                        <button
+                            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                            style={{
+                                padding: '0.6rem 2rem',
+                                fontSize: '1rem',
+                                fontWeight: 600,
+                                background: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Log Out and Try Again
+                        </button>
+                    </div>
                 ) : !role ? (
                     <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
                         <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Role Assigned</h2>
                         <p style={{ color: '#64748b', marginBottom: '2rem' }}>
-                            Your account does not have a role assigned. Please contact your administrator or update your Auth0 settings to assign the 'coordinator', 'psw', or 'family' role.
+                            Your account does not have a role assigned. Please log out and sign up using one of the role buttons.
                         </p>
                         <button
                             onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
