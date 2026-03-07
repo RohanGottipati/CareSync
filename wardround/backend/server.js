@@ -11,6 +11,7 @@ import visitsRouter from './routes/visits.js';
 import familyRouter from './routes/family.js';
 import documentsRouter from './routes/documents.js';
 import clientsRouter from './routes/clients.js';
+import debugRouter from './routes/debug.js';
 
 dotenv.config();
 
@@ -25,6 +26,11 @@ app.use('/api/documents', authMiddleware, extractUser, requireRole('psw', 'famil
 app.use('/api/clients', authMiddleware, extractUser, clientsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// Dev-only debug routes (never exposed in production)
+if (process.env.NODE_ENV !== 'production') {
+    app.use('/api/debug', debugRouter);
+}
 
 const PORT = process.env.PORT || 3001;
 
