@@ -1,0 +1,151 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.5rem;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.navbar.dark {
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.logo {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  transition: color 0.2s, transform 0.15s;
+}
+
+.logo:hover {
+  color: #2563eb;
+  transform: scale(1.02);
+}
+
+.navbar.dark .logo {
+  color: #f1f5f9;
+}
+
+.navbar.dark .logo:hover {
+  color: #93c5fd;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.navLink {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #475569;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.navLink:hover {
+  color: #0f172a;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.navLink.active {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.navbar.dark .navLink {
+  color: #94a3b8;
+}
+
+.navbar.dark .navLink:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.navbar.dark .navLink.active {
+  color: #93c5fd;
+  background: rgba(147, 197, 253, 0.15);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btnSecondary,
+.btnPrimary {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.btnSecondary {
+  color: #475569;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.btnSecondary:hover {
+  color: #0f172a;
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.btnPrimary {
+  color: #fff;
+  background: #2563eb;
+  border: none;
+}
+
+.btnPrimary:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.btnPrimary:active {
+  transform: translateY(0);
+}
+
+.navbar.dark .btnSecondary {
+  color: #94a3b8;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.navbar.dark .btnSecondary:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.navbar.dark .btnPrimary {
+  background: #3b82f6;
+}
+
+.navbar.dark .btnPrimary:hover {
+  background: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+@media (max-width: 768px) {
+  .nav {
+    display: none;
+  }
+}

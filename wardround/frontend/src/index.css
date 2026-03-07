@@ -4,10 +4,16 @@
   --bg-color: #f8fafc;
   --text-main: #0f172a;
 }
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--bg-color);
   color: var(--text-main);
-  margin: 0;
-  padding: 0;
 }
