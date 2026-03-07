@@ -1,76 +1,164 @@
-// backend/routes/clients.js
-// Coordinator-only CRUD for client profiles.
-// On create: provisions a Backboard thread and seeds initial memory.
+/**
+ * Clients & Assignments — coordinator only (except GET /my-clients for PSWs).
+ *
+ * Coordinator routes:
+ *   GET    /api/clients                    — list all clients
+ *   POST   /api/clients                    — create a client + seed Backboard thread
+ *   PUT    /api/clients/:id                — update a client
+ *   GET    /api/clients/assignments/all    — list all assignments
+ *   POST   /api/clients/assignments        — assign a PSW to a client for a shift
+ *   DELETE /api/clients/assignments/:id    — remove an assignment
+ *
+ * PSW route:
+ *   GET    /api/clients/my-clients         — list clients assigned to the logged-in PSW right now
+ */
 
 import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import { readDb, writeDb } from '../db.js';
-import { createClientThread, writeMemory } from '../services/backboard.js';
+import {
+    getAllClients,
+    getClientById,
+    createClient,
+    updateClient,
+    setClientThread,
+    createAssignment,
+    getAllAssignments,
+    getActiveAssignmentsForPsw,
+    deleteAssignment,
+} from '../db.js';
+import { requireRole } from '../middleware/auth.js';
+import { getAssistantId, createThread, writeMemory } from '../services/backboard.js';
 
 const router = express.Router();
 
-const HANDOFF_AGENT_ID = process.env.BACKBOARD_HANDOFF_AGENT_ID;
-
-// GET /api/clients — list all clients
-router.get('/', (req, res) => {
-    const db = readDb();
-    res.json({ clients: db.clients || [] });
-});
-
-// GET /api/clients/:id — get a single client
-router.get('/:id', (req, res) => {
-    const db = readDb();
-    const client = (db.clients || []).find(c => c.id === req.params.id);
-    if (!client) return res.status(404).json({ error: 'Client not found' });
-    res.json({ client });
-});
-
-// POST /api/clients — create a new client profile
-// Body: { name, dob, diagnosis, medications, allergies, notes }
-router.post('/', async (req, res) => {
+// ── PSW: get my currently assigned clients ────────────────────────────────────
+router.get('/my-clients', requireRole('psw', 'coordinator'), async (req, res) => {
     try {
-        const { name, dob, diagnosis, medications = [], allergies = [], notes = '' } = req.body;
+        const assignments = await getActiveAssignmentsForPsw(req.user.id);
+        res.json({ clients: assignments });
+    } catch (err) {
+        console.error('my-clients error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
-        if (!name) return res.status(400).json({ error: 'name is required' });
+// ── Coordinator: list all clients ─────────────────────────────────────────────
+router.get('/', requireRole('coordinator'), async (req, res) => {
+    try {
+        const clients = await getAllClients();
+        res.json({ clients });
+    } catch (err) {
+        console.error('GET /clients error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
-        // 1. Create a dedicated Backboard thread for this client under the Handoff Agent
-        const handoffThreadId = await createClientThread(HANDOFF_AGENT_ID);
+// ── Coordinator: get single client ────────────────────────────────────────────
+router.get('/:id', requireRole('coordinator'), async (req, res) => {
+    try {
+        const client = await getClientById(req.params.id);
+        if (!client) return res.status(404).json({ error: 'Client not found' });
+        res.json({ client });
+    } catch (err) {
+        console.error('GET /clients/:id error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
-        // 2. Seed the Handoff Agent's shared memory with this client's profile
-        const profileMemory = [
-            `CLIENT PROFILE — ${name}`,
-            dob ? `Date of Birth: ${dob}` : null,
-            diagnosis ? `Diagnosis: ${diagnosis}` : null,
-            medications.length ? `Medications: ${medications.join(', ')}` : null,
-            allergies.length ? `Allergies: ${allergies.join(', ')}` : null,
-            notes ? `Care Notes: ${notes}` : null,
-        ]
-            .filter(Boolean)
-            .join('\n');
+// ── Coordinator: create client + provision Backboard thread ───────────────────
+router.post('/', requireRole('coordinator'), async (req, res) => {
+    try {
+        const { name, dateOfBirth, medications, conditions, notes } = req.body || {};
+        if (!name) return res.status(400).json({ error: 'name required' });
 
-        await writeMemory(HANDOFF_AGENT_ID, profileMemory);
+        // 1. Save client record to Postgres
+        const client = await createClient({ name, dateOfBirth, medications, conditions, notes });
 
-        // 3. Save client record to local JSON db
-        const db = readDb();
-        const client = {
-            id: uuidv4(),
-            name,
-            dob: dob || null,
-            diagnosis: diagnosis || null,
-            medications,
-            allergies,
-            notes,
-            handoffThreadId,
-            createdAt: new Date().toISOString(),
-        };
+        // 2. Provision a Backboard handoff thread for this client
+        const assistantId = getAssistantId('handoff');
+        if (assistantId) {
+            try {
+                const { thread_id: threadId } = await createThread(assistantId);
+                await setClientThread(client.id, 'handoff', threadId);
 
-        db.clients = [...(db.clients || []), client];
-        writeDb(db);
+                // 3. Seed the thread memory with the client profile
+                const profileMemory = [
+                    `CLIENT PROFILE — ${name}`,
+                    dateOfBirth ? `Date of Birth: ${dateOfBirth}` : null,
+                    conditions ? `Conditions: ${conditions}` : null,
+                    medications ? `Medications: ${medications}` : null,
+                    notes ? `Care Notes: ${notes}` : null,
+                ]
+                    .filter(Boolean)
+                    .join('\n');
+
+                await writeMemory(threadId, profileMemory);
+            } catch (backboardErr) {
+                // Non-fatal: log but still return the created client
+                console.warn('[clients] Backboard seeding failed (non-fatal):', backboardErr.message);
+            }
+        }
 
         res.status(201).json({ client });
     } catch (err) {
-        console.error('[clients] POST error:', err.response?.data || err.message);
-        res.status(500).json({ error: 'Failed to create client', detail: err.message });
+        console.error('POST /clients error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: update client ────────────────────────────────────────────────
+router.put('/:id', requireRole('coordinator'), async (req, res) => {
+    try {
+        const { name, dateOfBirth, medications, conditions, notes } = req.body || {};
+        if (!name) return res.status(400).json({ error: 'name required' });
+        const client = await updateClient(req.params.id, { name, dateOfBirth, medications, conditions, notes });
+        if (!client) return res.status(404).json({ error: 'Client not found' });
+        res.json({ client });
+    } catch (err) {
+        console.error('PUT /clients/:id error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: list all assignments ─────────────────────────────────────────
+router.get('/assignments/all', requireRole('coordinator'), async (req, res) => {
+    try {
+        const assignments = await getAllAssignments();
+        res.json({ assignments });
+    } catch (err) {
+        console.error('GET /clients/assignments error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: assign PSW to client for a shift ─────────────────────────────
+router.post('/assignments', requireRole('coordinator'), async (req, res) => {
+    try {
+        const { clientId, pswUserId, shiftStart, shiftEnd } = req.body || {};
+        if (!clientId || !pswUserId || !shiftStart || !shiftEnd) {
+            return res.status(400).json({ error: 'clientId, pswUserId, shiftStart, shiftEnd required' });
+        }
+        const assignment = await createAssignment({
+            clientId,
+            pswUserId,
+            shiftStart,
+            shiftEnd,
+            setBy: req.user.id,
+        });
+        res.status(201).json({ assignment });
+    } catch (err) {
+        console.error('POST /clients/assignments error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: delete assignment ────────────────────────────────────────────
+router.delete('/assignments/:id', requireRole('coordinator'), async (req, res) => {
+    try {
+        await deleteAssignment(req.params.id);
+        res.json({ message: 'Assignment removed' });
+    } catch (err) {
+        console.error('DELETE /clients/assignments/:id error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 

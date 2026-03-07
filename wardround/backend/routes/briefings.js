@@ -1,9 +1,14 @@
-// backend/routes/briefings.js
-// Triggers the Backboard Handoff Agent to generate a pre-visit briefing for a client.
+/**
+ * Briefings: pre-visit Handoff Agent.
+ * GET /api/briefings/:clientId — returns today's AI-generated briefing.
+ *
+ * PSWs can only access briefings for clients they are currently assigned to.
+ * Coordinators can access any client's briefing.
+ */
 
 import express from 'express';
-import { readDb } from '../db.js';
-import { runAgent } from '../services/backboard.js';
+import { runAgent, getAssistantId, createThread } from '../services/backboard.js';
+import { getClientThread, setClientThread, getClientById, isPswAssignedToClient } from '../db.js';
 
 const router = express.Router();
 
@@ -17,27 +22,44 @@ const BRIEFING_PROMPT =
 // GET /api/briefings/:clientId
 router.get('/:clientId', async (req, res) => {
     try {
-        const db = readDb();
-        const client = (db.clients || []).find(c => c.id === req.params.clientId);
+        const { clientId } = req.params;
 
+        // PSWs must be assigned to the client for the current shift
+        if (req.user.role === 'psw') {
+            const assigned = await isPswAssignedToClient(req.user.id, clientId);
+            if (!assigned) {
+                return res.status(403).json({ error: 'You are not assigned to this client for the current shift.' });
+            }
+        }
+
+        const client = await getClientById(clientId);
         if (!client) {
             return res.status(404).json({ error: 'Client not found' });
         }
 
-        if (!client.handoffThreadId) {
-            return res.status(400).json({ error: 'Client has no Backboard thread — re-create client record' });
+        const assistantId = getAssistantId('handoff');
+        if (!assistantId) {
+            return res.status(503).json({ error: 'Handoff agent not configured — set BACKBOARD_HANDOFF_AGENT_ID' });
         }
 
-        const briefing = await runAgent(client.handoffThreadId, BRIEFING_PROMPT);
+        // Get or create a persistent thread for this client
+        let threadId = await getClientThread(clientId, 'handoff');
+        if (!threadId) {
+            const created = await createThread(assistantId);
+            threadId = created.thread_id;
+            await setClientThread(clientId, 'handoff', threadId);
+        }
+
+        const { content: briefing } = await runAgent(threadId, BRIEFING_PROMPT);
 
         res.json({
-            clientId: client.id,
+            clientId,
             clientName: client.name,
             briefing,
             generatedAt: new Date().toISOString(),
         });
     } catch (err) {
-        console.error('[briefings] GET error:', err.response?.data || err.message);
+        console.error('[briefings] GET error:', err.message);
         res.status(500).json({ error: 'Failed to generate briefing', detail: err.message });
     }
 });

@@ -1,64 +1,51 @@
-// backend/routes/visits.js
-// Logs a PSW visit and writes the key details to the Backboard Handoff Agent's memory.
+/**
+ * Visits: log a PSW visit, persist to Postgres, and write context to Backboard
+ * so future briefings have up-to-date visit history.
+ *
+ * POST /api/visits  { clientId, notes, mood, vitals, flaggedConcerns }
+ *
+ * PSWs must be currently assigned to the client (per assignments table).
+ * Coordinators may log visits on behalf of PSWs.
+ */
 
 import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import { readDb, writeDb } from '../db.js';
-import { writeMemory } from '../services/backboard.js';
+import { createVisit, getClientById, getClientThread, setClientThread, isPswAssignedToClient } from '../db.js';
+import { getAssistantId, createThread, writeMemory } from '../services/backboard.js';
 
 const router = express.Router();
 
-const HANDOFF_AGENT_ID = process.env.BACKBOARD_HANDOFF_AGENT_ID;
-
 // POST /api/visits
-// Body: { clientId, pswId, notes, mood, vitals: { bp, weight, temp }, flaggedConcerns }
 router.post('/', async (req, res) => {
     try {
         const {
             clientId,
-            pswId,
             notes = '',
             mood = '',
             vitals = {},
             flaggedConcerns = [],
-        } = req.body;
+        } = req.body || {};
 
         if (!clientId) return res.status(400).json({ error: 'clientId is required' });
 
-        // 1. Verify client exists
-        const db = readDb();
-        const client = (db.clients || []).find(c => c.id === clientId);
+        // PSWs must be assigned to this client right now
+        if (req.user.role === 'psw') {
+            const assigned = await isPswAssignedToClient(req.user.id, clientId);
+            if (!assigned) {
+                return res.status(403).json({ error: 'You are not assigned to this client for the current shift.' });
+            }
+        }
+
+        // Verify client exists
+        const client = await getClientById(clientId);
         if (!client) return res.status(404).json({ error: 'Client not found' });
 
-        console.log('Building visit record');
+        // Persist to Postgres
+        const visit = await createVisit({ clientId, pswUserId: req.user.id, notes });
 
-        // 2. Build visit record
-        const visit = {
-            id: uuidv4(),
-            clientId,
-            clientName: client.name,
-            pswId: pswId || req.user?.id || 'unknown',
-            notes,
-            mood,
-            vitals,
-            flaggedConcerns,
-            timestamp: new Date().toISOString(),
-        };
-
-        console.log('Writing to DB');
-        // 3. Persist to db
-        db.visits = [...(db.visits || []), visit];
-        writeDb(db);
-
-        console.log('Formatting memory string');
-        // 4. Format a memory string and write to Handoff Agent
-        const visitDate = new Date(visit.timestamp).toLocaleDateString('en-CA', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
+        // Build a rich memory string for future briefings
+        const visitDate = new Date().toLocaleDateString('en-CA', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+            hour: '2-digit', minute: '2-digit',
         });
 
         const memoryLines = [
@@ -73,29 +60,27 @@ router.post('/', async (req, res) => {
             .filter(Boolean)
             .join('\n');
 
-        console.log('Calling writeMemory');
-        await writeMemory(HANDOFF_AGENT_ID, memoryLines);
+        // Write to Backboard memory (non-fatal if it fails)
+        const assistantId = getAssistantId('handoff');
+        if (assistantId) {
+            try {
+                let threadId = await getClientThread(clientId, 'handoff');
+                if (!threadId) {
+                    const created = await createThread(assistantId);
+                    threadId = created.thread_id;
+                    await setClientThread(clientId, 'handoff', threadId);
+                }
+                await writeMemory(threadId, memoryLines);
+            } catch (backboardErr) {
+                console.warn('[visits] Backboard write failed (non-fatal):', backboardErr.message);
+            }
+        }
 
-        console.log('Sending response');
         res.status(201).json({ visit });
     } catch (err) {
-        console.error('=== VISITS POST FATAL ERROR ===');
-        console.error(err);
-        if (err.response) {
-            console.error('Data:', err.response.data);
-            console.error('Status:', err.response.status);
-            console.error('Headers:', err.response.headers);
-        }
+        console.error('[visits] POST error:', err);
         res.status(500).json({ error: 'Failed to log visit', detail: err.message });
     }
-});
-
-// GET /api/visits?clientId=... — list visits for a client
-router.get('/', (req, res) => {
-    const db = readDb();
-    const { clientId } = req.query;
-    const visits = (db.visits || []).filter(v => !clientId || v.clientId === clientId);
-    res.json({ visits });
 });
 
 export default router;
