@@ -9,35 +9,30 @@ export default function LandingPage() {
             overflow: 'hidden',
             background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)',
         }}>
-            {/* 3D Spline Background */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                zIndex: 0,
-            }}>
-                <Spline scene="https://prod.spline.design/xdWX96OncUhXEm9L/scene.splinecode" />
-            </div>
+            <style>{`
+                .spline-wrapper,
+                .spline-wrapper canvas,
+                .spline-wrapper div,
+                .spline-wrapper iframe,
+                .spline-wrapper > * {
+                    pointer-events: none !important;
+                }
+            `}</style>
 
-            {/* Foreground Content */}
-            <div style={{
-                position: 'relative',
-                zIndex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '100vh',
-                color: 'white',
-                textAlign: 'center',
-                padding: '2rem',
-                backgroundColor: 'rgba(0, 0, 0, 0.4)', // Dim to make text readable over 3D model
-                pointerEvents: 'none', // Allow clicking the 3D model if wanted
-            }}>
-                <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                </div>
+            {/* 3D Spline Background */}
+            <div
+                className="spline-wrapper"
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 0,
+                    pointerEvents: 'none',
+                }}
+            >
+                <Spline
+                    scene="https://prod.spline.design/xdWX96OncUhXEm9L/scene.splinecode"
+                    style={{ pointerEvents: 'none' }}
+                />
             </div>
         </div>
     );
