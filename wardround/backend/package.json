@@ -1,21 +1,28 @@
 {
   "name": "wardround-backend",
   "version": "1.0.0",
+  "description": "WardRound backend — Node.js + Express",
   "type": "module",
-  "description": "Backend for Wardround",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "axios": "^1.6.7",
     "bull": "^4.11.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "form-data": "^4.0.0",
+    "ioredis": "^5.3.2",
+    "multer": "^1.4.5-lts.1",
+    "@aws-sdk/client-s3": "^3.525.0",
+    "@aws-sdk/s3-request-presigner": "^3.525.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.9",
     "express": "^4.18.2",
     "express-oauth2-jwt-bearer": "^1.7.4",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1"
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
