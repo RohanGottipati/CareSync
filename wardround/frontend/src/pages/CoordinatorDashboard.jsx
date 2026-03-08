@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../useApi';
 import MedicationFlags from '../components/MedicationFlags';
+import DocumentUpload from '../components/DocumentUpload';
 
 /* ──────────────────────────────────────────────────────────────
    Shared UI primitives
@@ -21,16 +22,22 @@ const btnPrimary = {
     background: 'linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%)',
     color: 'white', fontWeight: 600, fontSize: '0.85rem',
     cursor: 'pointer',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    minHeight: '36px',
 };
 const btnGhost = {
     padding: '0.45rem 0.9rem', border: '1px solid #e2e8f0', borderRadius: '8px',
     background: 'white', color: '#475569', fontWeight: 500, fontSize: '0.82rem',
     cursor: 'pointer',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    minHeight: '34px',
 };
 const btnDanger = {
     padding: '0.35rem 0.7rem', border: '1px solid #fecaca', borderRadius: '6px',
     background: '#fef2f2', color: '#b91c1c', fontWeight: 600, fontSize: '0.78rem',
     cursor: 'pointer',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    minHeight: '32px',
 };
 const card = {
     background: 'white', border: '1px solid #e2e8f0',
@@ -420,18 +427,176 @@ function SentinelTab() {
             <button
                 onClick={run}
                 disabled={loading}
+                type="button"
                 style={{
                     ...btnPrimary, marginBottom: '1.25rem',
                     background: loading
                         ? '#e2e8f0'
                         : 'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)',
                     color: loading ? '#94a3b8' : 'white',
+                    cursor: loading ? 'not-allowed' : 'pointer',
                 }}
             >
-                {loading ? '⏳ Running Sentinel…' : '▶ Run Sentinel Now'}
+                <span style={{ pointerEvents: 'none' }}>{loading ? '⏳ Running Sentinel…' : '▶ Run Sentinel Now'}</span>
             </button>
 
             <MedicationFlags results={results} loading={loading} error={error} triggeredAt={triggeredAt} />
+        </div>
+    );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   DOCUMENTS TAB
+────────────────────────────────────────────────────────────── */
+function DocumentsTab() {
+    const { fetchWithAuth } = useApi();
+    const [clients, setClients] = useState([]);
+    const [selectedId, setSelectedId] = useState('');
+    const [docs, setDocs] = useState([]);
+    const [loadingDocs, setLoadingDocs] = useState(false);
+    const [sentinel, setSentinel] = useState(null);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        fetchWithAuth('/clients')
+            .then(d => {
+                const list = d.clients || [];
+                setClients(list);
+                if (list.length === 1) setSelectedId(list[0].id);
+            })
+            .catch(e => setError(e.message));
+    }, [fetchWithAuth]);
+
+    const loadDocs = useCallback(async (clientId) => {
+        if (!clientId) { setDocs([]); setSentinel(null); return; }
+        setLoadingDocs(true);
+        setError('');
+        try {
+            const [docData, sentinelData] = await Promise.all([
+                fetchWithAuth(`/documents?clientId=${clientId}`),
+                fetchWithAuth(`/clients/${clientId}/sentinel`).catch(() => ({ sentinel: null })),
+            ]);
+            setDocs(docData.documents || []);
+            setSentinel(sentinelData.sentinel || null);
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setLoadingDocs(false);
+        }
+    }, [fetchWithAuth]);
+
+    useEffect(() => { loadDocs(selectedId); }, [selectedId, loadDocs]);
+
+    const selectedClient = clients.find(c => c.id === selectedId);
+
+    const fmtDate = (d) => d ? new Date(d).toLocaleString('en-CA', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+    return (
+        <div>
+            {error && (
+                <div style={{ padding: '0.75rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#b91c1c', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    ⚠️ {error}
+                </div>
+            )}
+
+            {/* Client selector */}
+            <div style={{ marginBottom: '1.25rem' }}>
+                <label style={labelStyle}>Select Client</label>
+                <select style={{ ...inputStyle, maxWidth: 320 }} value={selectedId} onChange={e => setSelectedId(e.target.value)}>
+                    <option value="">— select client —</option>
+                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+            </div>
+
+            {/* Sentinel banner for selected client */}
+            {selectedId && sentinel?.status === 'FLAGGED' && (
+                <div style={{
+                    marginBottom: '1.25rem', padding: '0.85rem 1rem',
+                    borderRadius: '12px', border: '1.5px solid #fca5a5',
+                    background: 'linear-gradient(135deg,#fef2f2 0%,#fff5f5 100%)',
+                    display: 'flex', alignItems: 'flex-start', gap: '0.65rem',
+                    boxShadow: '0 2px 6px rgba(220,38,38,.08)',
+                }}>
+                    <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>🚨</span>
+                    <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#b91c1c', marginBottom: '0.2rem' }}>
+                            Sentinel Flag — {selectedClient?.name}
+                        </div>
+                        <div style={{ fontSize: '0.83rem', color: '#dc2626', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                            {sentinel.summary_text}
+                        </div>
+                        {sentinel.checked_at && (
+                            <div style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: '0.3rem', opacity: 0.75 }}>
+                                Last checked: {fmtDate(sentinel.checked_at)}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Upload area */}
+            {selectedId && (
+                <>
+                    <div style={{ marginBottom: '1.25rem' }}>
+                        <DocumentUpload clientId={selectedId} onUploadSuccess={() => loadDocs(selectedId)} />
+                    </div>
+
+                    {/* Document list */}
+                    <div style={card}>
+                        <div style={cardHeader}>
+                            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>
+                                Uploaded Documents {selectedClient && `— ${selectedClient.name}`}
+                            </span>
+                            <button
+                                type="button"
+                                style={btnGhost}
+                                onClick={() => loadDocs(selectedId)}
+                                disabled={loadingDocs}
+                            >
+                                {loadingDocs ? 'Loading…' : '↻ Refresh'}
+                            </button>
+                        </div>
+                        {loadingDocs && (
+                            <div style={{ padding: '1.25rem', color: '#94a3b8', fontSize: '0.875rem' }}>Loading…</div>
+                        )}
+                        {!loadingDocs && docs.length === 0 && (
+                            <div style={{ padding: '2rem', textAlign: 'center' }}>
+                                <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: 0 }}>No documents uploaded yet.</p>
+                            </div>
+                        )}
+                        {!loadingDocs && docs.length > 0 && (
+                            <table style={tableStyle}>
+                                <thead>
+                                    <tr>
+                                        <th style={th}>Filename</th>
+                                        <th style={th}>Uploaded</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {docs.map(d => (
+                                        <tr key={d.id}>
+                                            <td style={{ ...td, fontWeight: 500 }}>
+                                                {d.storage_url
+                                                    ? <a href={d.storage_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none' }}>{d.filename}</a>
+                                                    : d.filename
+                                                }
+                                            </td>
+                                            <td style={{ ...td, ...muted }}>{fmtDate(d.uploaded_at)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </>
+            )}
+
+            {!selectedId && (
+                <div style={{ padding: '2.5rem', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #e2e8f0' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📂</div>
+                    <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>Select a client to manage their documents.</p>
+                </div>
+            )}
         </div>
     );
 }
@@ -443,6 +608,7 @@ const TABS = [
     { id: 'clients', label: 'Clients', icon: '👤' },
     { id: 'assignments', label: 'Assignments', icon: '📋' },
     { id: 'sentinel', label: 'Sentinel', icon: '🛡' },
+    { id: 'documents', label: 'Documents', icon: '📂' },
 ];
 
 export default function CoordinatorDashboard() {
@@ -458,7 +624,8 @@ export default function CoordinatorDashboard() {
         color: activeTab === id ? '#2563eb' : '#64748b',
         borderBottom: `2px solid ${activeTab === id ? '#2563eb' : 'transparent'}`,
         marginBottom: '-2px', transition: 'color 0.15s',
-        display: 'flex', alignItems: 'center', gap: '0.4rem',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+        minHeight: '38px',
     });
 
     return (
@@ -484,8 +651,9 @@ export default function CoordinatorDashboard() {
             {/* Tab bar */}
             <div style={tabBar}>
                 {TABS.map(t => (
-                    <button key={t.id} style={tabBtn(t.id)} onClick={() => setActiveTab(t.id)}>
-                        <span>{t.icon}</span> {t.label}
+                    <button key={t.id} style={tabBtn(t.id)} onClick={() => setActiveTab(t.id)} type="button">
+                        <span style={{ pointerEvents: 'none' }}>{t.icon}</span>
+                        <span style={{ pointerEvents: 'none' }}>{t.label}</span>
                     </button>
                 ))}
             </div>
@@ -494,6 +662,7 @@ export default function CoordinatorDashboard() {
             {activeTab === 'clients' && <ClientsTab />}
             {activeTab === 'assignments' && <AssignmentsTab />}
             {activeTab === 'sentinel' && <SentinelTab />}
+            {activeTab === 'documents' && <DocumentsTab />}
         </div>
     );
 }

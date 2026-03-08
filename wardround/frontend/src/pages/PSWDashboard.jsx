@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useApi } from '../useApi';
 import BriefingCard from '../components/BriefingCard';
@@ -18,6 +18,8 @@ export default function PSWDashboard() {
     const [loadingClients, setLoadingClients] = useState(true);
     const [clientsError, setClientsError] = useState('');
 
+    const [sentinelResult, setSentinelResult] = useState(null);
+
     useEffect(() => {
         const endpoint = isCoordinator ? '/clients' : '/clients/my-clients';
         fetchWithAuth(endpoint)
@@ -29,6 +31,13 @@ export default function PSWDashboard() {
             .catch(err => setClientsError(err.message))
             .finally(() => setLoadingClients(false));
     }, [fetchWithAuth, isCoordinator]);
+
+    useEffect(() => {
+        if (!selectedId) { setSentinelResult(null); return; }
+        fetchWithAuth(`/clients/${selectedId}/sentinel`)
+            .then(data => setSentinelResult(data.sentinel))
+            .catch(() => setSentinelResult(null));
+    }, [selectedId, fetchWithAuth]);
 
     const clientIdFrom = (c) => (isCoordinator ? c.id : c.client_id);
     const selectedClient = clients.find(c => clientIdFrom(c) === selectedId);
@@ -130,6 +139,34 @@ export default function PSWDashboard() {
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Sentinel flag banner */}
+            {sentinelResult?.status === 'FLAGGED' && (
+                <div style={{
+                    marginBottom: '1.25rem',
+                    padding: '0.85rem 1rem',
+                    borderRadius: '12px',
+                    border: '1.5px solid #fca5a5',
+                    background: 'linear-gradient(135deg,#fef2f2 0%,#fff5f5 100%)',
+                    display: 'flex', alignItems: 'flex-start', gap: '0.65rem',
+                    boxShadow: '0 2px 6px rgba(220,38,38,.08)',
+                }}>
+                    <span style={{ fontSize: '1.1rem', flexShrink: 0, marginTop: '0.05rem' }}>🚨</span>
+                    <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#b91c1c', marginBottom: '0.2rem' }}>
+                            Medication Sentinel Flag
+                        </div>
+                        <div style={{ fontSize: '0.83rem', color: '#dc2626', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                            {sentinelResult.summary_text}
+                        </div>
+                        {sentinelResult.checked_at && (
+                            <div style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: '0.35rem', opacity: 0.75 }}>
+                                Last checked: {new Date(sentinelResult.checked_at).toLocaleString('en-CA')}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 

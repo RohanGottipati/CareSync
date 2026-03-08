@@ -76,7 +76,7 @@ function DraftCard({ draft, index }) {
 
             {/* Actions */}
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={copy} style={{
+                <button type="button" onClick={copy} style={{
                     flex: 1,
                     padding: '0.5rem',
                     fontSize: '0.8rem', fontWeight: 600,
@@ -84,10 +84,12 @@ function DraftCard({ draft, index }) {
                     borderRadius: '8px',
                     background: 'white', color: colors.badge,
                     cursor: 'pointer', transition: 'background 0.15s',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    minHeight: '36px',
                 }}>
                     {copied ? '✓ Copied!' : '📋 Copy'}
                 </button>
-                <button onClick={() => alert('Email/send integration coming soon.')} style={{
+                <button type="button" onClick={() => alert('Email/send integration coming soon.')} style={{
                     flex: 1,
                     padding: '0.5rem',
                     fontSize: '0.8rem', fontWeight: 600,
@@ -95,6 +97,8 @@ function DraftCard({ draft, index }) {
                     borderRadius: '8px',
                     background: colors.badge, color: 'white',
                     cursor: 'pointer', opacity: 0.9, transition: 'opacity 0.15s',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    minHeight: '36px',
                 }}
                     onMouseOver={e => e.currentTarget.style.opacity = '1'}
                     onMouseOut={e => e.currentTarget.style.opacity = '0.9'}
@@ -193,7 +197,7 @@ export default function FamilyMessageDraft({ clientId }) {
                         />
                     </div>
 
-                    <button onClick={generate} disabled={loading} style={{
+                    <button type="button" onClick={generate} disabled={loading} style={{
                         padding: '0.6rem 1.25rem',
                         background: loading ? '#e2e8f0' : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                         color: loading ? '#94a3b8' : 'white',
@@ -201,6 +205,8 @@ export default function FamilyMessageDraft({ clientId }) {
                         fontSize: '0.9rem', fontWeight: 600,
                         cursor: loading ? 'not-allowed' : 'pointer',
                         transition: 'opacity 0.2s', marginBottom: '0.75rem',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        minHeight: '42px',
                     }}>
                         {loading ? 'Generating…' : drafts ? '↻ Regenerate Drafts' : '✦ Generate Drafts'}
                     </button>

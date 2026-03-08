@@ -20,7 +20,7 @@ app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
 app.use(express.json());
 
 app.use('/api/briefings', authMiddleware, extractUser, requireRole('psw', 'coordinator'), briefingsRouter);
-app.use('/api/visits', authMiddleware, extractUser, requireRole('psw'), visitsRouter);
+app.use('/api/visits', authMiddleware, extractUser, requireRole('psw', 'coordinator'), visitsRouter);
 app.use('/api/family', authMiddleware, extractUser, requireRole('psw', 'family', 'coordinator'), familyRouter);
 app.use('/api/documents', authMiddleware, extractUser, requireRole('psw', 'family', 'coordinator'), documentsRouter);
 app.use('/api/clients', authMiddleware, extractUser, clientsRouter);

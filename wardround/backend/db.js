@@ -92,11 +92,11 @@ export async function updateClient(clientId, { name, dateOfBirth, medications, c
 // ── Visits ────────────────────────────────────────────────────────────────────
 
 /** Save a visit log entry. */
-export async function createVisit({ clientId, pswUserId, notes }) {
+export async function createVisit({ clientId, pswUserId, notes, sessionType }) {
     const { rows } = await pool.query(
-        `INSERT INTO visits (client_id, psw_user_id, notes)
-         VALUES ($1, $2, $3) RETURNING *`,
-        [clientId, pswUserId, notes || '']
+        `INSERT INTO visits (client_id, psw_user_id, notes, session_type)
+         VALUES ($1, $2, $3, $4) RETURNING *`,
+        [clientId, pswUserId, notes || '', sessionType || null]
     );
     return rows[0];
 }
@@ -105,6 +105,102 @@ export async function createVisit({ clientId, pswUserId, notes }) {
 export async function getVisitsByClient(clientId) {
     const { rows } = await pool.query(
         'SELECT * FROM visits WHERE client_id = $1 ORDER BY logged_at DESC',
+        [clientId]
+    );
+    return rows;
+}
+
+/** Get visits for a client within a date range (used by nightly family summary cron). */
+export async function getVisitsByClientForDate(clientId, date) {
+    const { rows } = await pool.query(
+        `SELECT * FROM visits
+         WHERE client_id = $1
+           AND logged_at >= $2::date
+           AND logged_at < ($2::date + INTERVAL '1 day')
+         ORDER BY logged_at ASC`,
+        [clientId, date]
+    );
+    return rows;
+}
+
+/** Get all clients that had at least one visit on a given date. */
+export async function getClientsWithVisitsOnDate(date) {
+    const { rows } = await pool.query(
+        `SELECT DISTINCT c.*
+         FROM clients c
+         JOIN visits v ON v.client_id = c.id
+         WHERE v.logged_at >= $1::date
+           AND v.logged_at < ($1::date + INTERVAL '1 day')
+         ORDER BY c.name`,
+        [date]
+    );
+    return rows;
+}
+
+// ── Sentinel results ─────────────────────────────────────────────────────────
+
+/** Upsert the latest sentinel result for a client (called by nightly cron). */
+export async function upsertSentinelResult({ clientId, status, summaryText }) {
+    await pool.query(
+        `INSERT INTO client_sentinel_results (client_id, status, summary_text, checked_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (client_id) DO UPDATE
+           SET status = EXCLUDED.status,
+               summary_text = EXCLUDED.summary_text,
+               checked_at = NOW()`,
+        [clientId, status, summaryText || null]
+    );
+}
+
+/** Get the latest sentinel result for a single client. */
+export async function getSentinelResult(clientId) {
+    const { rows } = await pool.query(
+        'SELECT * FROM client_sentinel_results WHERE client_id = $1',
+        [clientId]
+    );
+    return rows[0] ?? null;
+}
+
+// ── Family daily summaries ────────────────────────────────────────────────────
+
+/** Insert a family daily summary. */
+export async function insertFamilySummary({ clientId, summaryDate, summaryText }) {
+    await pool.query(
+        `INSERT INTO family_daily_summaries (client_id, summary_date, summary_text)
+         VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING`,
+        [clientId, summaryDate, summaryText]
+    );
+}
+
+/** Fetch recent family daily summaries for a client (most recent first). */
+export async function getFamilySummaries(clientId, limit = 14) {
+    const { rows } = await pool.query(
+        `SELECT * FROM family_daily_summaries
+         WHERE client_id = $1
+         ORDER BY summary_date DESC
+         LIMIT $2`,
+        [clientId, limit]
+    );
+    return rows;
+}
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+
+/** Save document metadata after upload. */
+export async function insertDocument({ clientId, filename, storageKey, storageUrl, uploadedBy }) {
+    const { rows } = await pool.query(
+        `INSERT INTO documents (client_id, filename, storage_key, storage_url, uploaded_by)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [clientId, filename, storageKey, storageUrl || null, uploadedBy || null]
+    );
+    return rows[0];
+}
+
+/** List documents for a client. */
+export async function getDocumentsByClient(clientId) {
+    const { rows } = await pool.query(
+        `SELECT * FROM documents WHERE client_id = $1 ORDER BY uploaded_at DESC`,
         [clientId]
     );
     return rows;

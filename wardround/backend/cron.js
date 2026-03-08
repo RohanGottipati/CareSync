@@ -1,20 +1,24 @@
 /**
- * Nightly Medication Sentinel — runs at 2 AM (America/Toronto).
+ * Nightly jobs (America/Toronto):
+ *   2:00 AM — Medication Sentinel: reviews all clients, writes FLAGGED/CLEAR to DB + handoff memory
+ *   1:00 AM — Family Summaries: for each client with visits today, generates a family-friendly
+ *              daily update via the Family agent and stores it in family_daily_summaries.
  *
- * - Reads all clients from PostgreSQL
- * - Runs the Sentinel agent on Backboard for all clients as a batch
- * - Parses response for CLEAR vs FLAGGED per client
- * - Writes the sentinel result into each client's handoff thread memory
- *   so next morning's briefing includes overnight alert status
- * - Only schedules the cron when NODE_ENV=production
- * - Exports runMedicationSentinel() so it can be triggered manually (dev)
+ * Only schedules when NODE_ENV=production.
+ * Both jobs are exported so they can be triggered manually (dev / debug endpoints).
  */
 
 import cron from 'node-cron';
-import { getAllClients, getClientThread, setClientThread } from './db.js';
+import {
+    getAllClients, getClientThread, setClientThread,
+    upsertSentinelResult,
+    getClientsWithVisitsOnDate, getVisitsByClientForDate,
+    insertFamilySummary,
+} from './db.js';
 import * as backboard from './services/backboard.js';
 
 const SENTINEL_CRON = '0 2 * * *';
+const FAMILY_SUMMARY_CRON = '0 1 * * *';
 
 const FLAG_KEYWORDS = ['concern', 'flag', 'alert', 'urgent', 'danger', 'risk', 'warn', 'issue', 'problem'];
 
@@ -118,6 +122,13 @@ export async function runMedicationSentinel() {
                 }
             }
 
+            // Persist result to DB so the UI can show the flag text without re-running the agent
+            try {
+                await upsertSentinelResult({ clientId: client.id, status, summaryText: summary });
+            } catch (dbErr) {
+                console.warn(`[Sentinel] Could not save DB result for ${client.name}:`, dbErr.message);
+            }
+
             console.log(`[Sentinel] ${client.name}: ${status}`);
             return { name: client.name, clientId: client.id, status, summary };
         })
@@ -126,11 +137,82 @@ export async function runMedicationSentinel() {
     return results;
 }
 
+/**
+ * Run the nightly family summary job.
+ * For each client that had at least one visit today, generate a family-friendly
+ * daily update via the Family agent and store it in family_daily_summaries.
+ */
+export async function runFamilySummaries() {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+    const familyAssistantId = backboard.getAssistantId('family');
+    if (!familyAssistantId) {
+        console.warn('[FamilySummary] BACKBOARD_FAMILY_AGENT_ID not set; skipping.');
+        return [];
+    }
+
+    const clients = await getClientsWithVisitsOnDate(today);
+    if (clients.length === 0) {
+        console.log('[FamilySummary] No clients with visits today; skipping.');
+        return [];
+    }
+
+    console.log(`[FamilySummary] Generating summaries for ${clients.length} client(s)…`);
+
+    const results = await Promise.all(
+        clients.map(async (client) => {
+            try {
+                const visits = await getVisitsByClientForDate(client.id, today);
+
+                // Build sanitised visit context (no PSW user IDs)
+                const visitLines = visits.map((v, i) => {
+                    const parts = [`Visit ${i + 1}`];
+                    if (v.session_type) parts.push(`(${v.session_type})`);
+                    if (v.notes) parts.push(`— ${v.notes}`);
+                    return parts.join(' ');
+                });
+
+                const prompt = [
+                    `Write a brief, warm, family-friendly daily update for ${client.name}'s family.`,
+                    'Base it only on the visit notes below. Do not include clinical jargon or raw PSW identifiers.',
+                    'Focus on the client\'s wellbeing, mood, and any noteworthy moments from the day.',
+                    'Keep it under 120 words. Sign off as "The WardRound Care Team".',
+                    '',
+                    `Today's visit notes for ${client.name}:`,
+                    ...visitLines,
+                ].join('\n');
+
+                // Use a per-client family thread so the agent has persistent context
+                let threadId = await getClientThread(client.id, 'family');
+                if (!threadId) {
+                    const created = await backboard.createThread(familyAssistantId);
+                    threadId = created.thread_id;
+                    await setClientThread(client.id, 'family', threadId);
+                }
+
+                const { content: summaryText } = await backboard.runAgent(threadId, prompt);
+
+                await insertFamilySummary({ clientId: client.id, summaryDate: today, summaryText });
+                console.log(`[FamilySummary] Saved summary for ${client.name}`);
+                return { name: client.name, clientId: client.id, date: today, ok: true };
+            } catch (err) {
+                console.warn(`[FamilySummary] Failed for ${client.name}:`, err.message);
+                return { name: client.name, clientId: client.id, date: today, ok: false, error: err.message };
+            }
+        })
+    );
+
+    return results;
+}
+
 export function runCron() {
     if (process.env.NODE_ENV !== 'production') {
-        console.log('Nightly Medication Sentinel: disabled (NODE_ENV !== production).');
+        console.log('Nightly jobs: disabled (NODE_ENV !== production).');
         return;
     }
     cron.schedule(SENTINEL_CRON, runMedicationSentinel, { timezone: 'America/Toronto' });
     console.log('Nightly Medication Sentinel: scheduled for 2:00 AM America/Toronto.');
+
+    cron.schedule(FAMILY_SUMMARY_CRON, runFamilySummaries, { timezone: 'America/Toronto' });
+    console.log('Nightly Family Summaries: scheduled for 1:00 AM America/Toronto.');
 }

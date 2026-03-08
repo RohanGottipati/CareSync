@@ -2,7 +2,7 @@
  * Visits: log a PSW visit, persist to Postgres, and write context to Backboard
  * so future briefings have up-to-date visit history.
  *
- * POST /api/visits  { clientId, notes, mood, vitals, flaggedConcerns }
+ * POST /api/visits  { clientId, notes, mood, vitals, flaggedConcerns, sessionType }
  *
  * PSWs must be currently assigned to the client (per assignments table).
  * Coordinators may log visits on behalf of PSWs.
@@ -23,6 +23,7 @@ router.post('/', async (req, res) => {
             mood = '',
             vitals = {},
             flaggedConcerns = [],
+            sessionType = '',
         } = req.body || {};
 
         if (!clientId) return res.status(400).json({ error: 'clientId is required' });
@@ -40,7 +41,7 @@ router.post('/', async (req, res) => {
         if (!client) return res.status(404).json({ error: 'Client not found' });
 
         // Persist to Postgres
-        const visit = await createVisit({ clientId, pswUserId: req.user.id, notes });
+        const visit = await createVisit({ clientId, pswUserId: req.user.id, notes, sessionType: sessionType || null });
 
         // Build a rich memory string for future briefings
         const visitDate = new Date().toLocaleDateString('en-CA', {
@@ -49,7 +50,7 @@ router.post('/', async (req, res) => {
         });
 
         const memoryLines = [
-            `VISIT LOG — ${client.name} — ${visitDate}`,
+            `VISIT LOG — ${client.name} — ${visitDate}${sessionType ? ` (${sessionType} session)` : ''}`,
             mood ? `Mood: ${mood}` : null,
             vitals.bp ? `Blood Pressure: ${vitals.bp}` : null,
             vitals.weight ? `Weight: ${vitals.weight}` : null,

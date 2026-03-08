@@ -1,12 +1,12 @@
 /**
  * Debug routes — DEV ONLY (not mounted in production).
  *
- * POST /api/debug/sentinel — immediately triggers the Medication Sentinel
- *   without waiting for the 2 AM cron, and returns per-client results.
+ * POST /api/debug/sentinel        — immediately triggers the Medication Sentinel
+ * POST /api/debug/family-summaries — immediately triggers nightly family summary job
  */
 
 import express from 'express';
-import { runMedicationSentinel } from '../cron.js';
+import { runMedicationSentinel, runFamilySummaries } from '../cron.js';
 
 const router = express.Router();
 
@@ -21,6 +21,20 @@ router.post('/sentinel', async (req, res) => {
     } catch (err) {
         console.error('[debug/sentinel] error:', err);
         res.status(500).json({ error: err.message || 'Sentinel run failed' });
+    }
+});
+
+router.post('/family-summaries', async (req, res) => {
+    try {
+        console.log('[debug] Manual Family Summaries trigger invoked.');
+        const results = await runFamilySummaries();
+        res.json({
+            triggeredAt: new Date().toISOString(),
+            clients: results,
+        });
+    } catch (err) {
+        console.error('[debug/family-summaries] error:', err);
+        res.status(500).json({ error: err.message || 'Family summaries run failed' });
     }
 });
 

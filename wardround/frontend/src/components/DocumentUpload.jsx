@@ -1,10 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { useApi } from '../useApi.js';
 
-const ACCEPTED_TYPES = '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg';
+const ACCEPTED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.docx'];
+const ACCEPTED_ACCEPT = '.pdf,.jpg,.jpeg,.png,.docx';
 const MAX_MB = 10;
 
-export default function DocumentUpload({ clientId }) {
+function isAllowedFile(file) {
+    const name = (file.name || '').toLowerCase();
+    return ACCEPTED_EXTENSIONS.some(ext => name.endsWith(ext));
+}
+
+export default function DocumentUpload({ clientId, onUploadSuccess }) {
     const { uploadWithAuth } = useApi();
     const [file, setFile] = useState(null);
     const [status, setStatus] = useState('idle'); // idle | uploading | success | error
@@ -15,6 +21,12 @@ export default function DocumentUpload({ clientId }) {
     function handleFileChange(e) {
         const selected = e.target.files[0];
         if (!selected) return;
+        if (!isAllowedFile(selected)) {
+            setStatus('error');
+            setErrorMsg('Only PDF, JPG, JPEG, PNG, and DOCX files are allowed.');
+            setFile(null);
+            return;
+        }
         if (selected.size > MAX_MB * 1024 * 1024) {
             setStatus('error');
             setErrorMsg(`File is too large. Maximum size is ${MAX_MB} MB.`);
@@ -41,6 +53,7 @@ export default function DocumentUpload({ clientId }) {
             setStatus('success');
             setFile(null);
             if (inputRef.current) inputRef.current.value = '';
+            if (onUploadSuccess) onUploadSuccess();
         } catch (err) {
             setStatus('error');
             setErrorMsg(err.message || 'Upload failed. Please try again.');
@@ -88,20 +101,21 @@ export default function DocumentUpload({ clientId }) {
                 <input
                     ref={inputRef}
                     type="file"
-                    accept={ACCEPTED_TYPES}
+                    accept={ACCEPTED_ACCEPT}
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
                 />
             </label>
 
             <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.5rem 0 1rem' }}>
-                Supported: PDF, Word, TXT, images · Max {MAX_MB} MB
+                Supported: PDF, JPG, JPEG, PNG, DOCX · Max {MAX_MB} MB
             </p>
 
             {/* Upload button */}
             <button
                 onClick={handleUpload}
                 disabled={!file || status === 'uploading'}
+                type="button"
                 style={{
                     width: '100%',
                     padding: '0.65rem',
@@ -113,6 +127,8 @@ export default function DocumentUpload({ clientId }) {
                     fontWeight: 600,
                     cursor: !file || status === 'uploading' ? 'not-allowed' : 'pointer',
                     transition: 'background 0.2s',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    minHeight: '44px',
                 }}
             >
                 {status === 'uploading' ? 'Uploading…' : 'Upload to WardRound'}

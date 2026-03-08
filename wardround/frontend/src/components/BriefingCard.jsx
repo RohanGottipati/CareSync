@@ -98,9 +98,10 @@ export default function BriefingCard({ clientId, role }) {
                         onClick={load}
                         disabled={state === 'loading' || !clientId}
                         title="Refresh briefing"
+                        type="button"
                         style={{
-                            display: 'flex', alignItems: 'center', gap: '0.4rem',
-                            padding: '0.4rem 0.85rem',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                            padding: '0.4rem 0.85rem', minHeight: '34px',
                             fontSize: '0.78rem', fontWeight: 600,
                             border: '1px solid #e2e8f0', borderRadius: '8px',
                             background: 'white', color: '#2563eb',
@@ -109,7 +110,7 @@ export default function BriefingCard({ clientId, role }) {
                             transition: 'background 0.15s',
                         }}
                     >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ pointerEvents: 'none', flexShrink: 0 }}>
                             <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
                         </svg>
                         {state === 'loading' ? 'Generating…' : 'Refresh'}

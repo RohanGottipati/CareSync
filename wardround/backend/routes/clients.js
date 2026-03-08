@@ -24,6 +24,7 @@ import {
     getAllAssignments,
     getCurrentAndUpcomingAssignmentsForPsw,
     deleteAssignment,
+    getSentinelResult,
 } from '../db.js';
 import { requireRole } from '../middleware/auth.js';
 import { getAssistantId, createThread, writeMemory } from '../services/backboard.js';
@@ -41,13 +42,24 @@ router.get('/my-clients', requireRole('psw', 'coordinator'), async (req, res) =>
     }
 });
 
-// ── Coordinator: list all clients ─────────────────────────────────────────────
-router.get('/', requireRole('coordinator'), async (req, res) => {
+// ── List all clients (coordinator + family view) ──────────────────────────────
+router.get('/', requireRole('coordinator', 'family'), async (req, res) => {
     try {
         const clients = await getAllClients();
         res.json({ clients });
     } catch (err) {
         console.error('GET /clients error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Sentinel result for a single client (PSW + coordinator) ───────────────────
+router.get('/:id/sentinel', requireRole('psw', 'coordinator'), async (req, res) => {
+    try {
+        const result = await getSentinelResult(req.params.id);
+        res.json({ sentinel: result || null });
+    } catch (err) {
+        console.error('GET /clients/:id/sentinel error:', err);
         res.status(500).json({ error: err.message });
     }
 });

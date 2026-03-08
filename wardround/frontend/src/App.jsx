@@ -24,7 +24,7 @@ function getUserRole(user) {
 const ROLE_CONFIG = {
     psw: { defaultPath: '/', allowedPaths: ['/', '/psw'] },
     family: { defaultPath: '/family', allowedPaths: ['/family'] },
-    coordinator: { defaultPath: '/coordinator', allowedPaths: ['/', '/psw', '/coordinator', '/family'] },
+    coordinator: { defaultPath: '/coordinator', allowedPaths: ['/coordinator'] },
 };
 
 function ProtectedRoute({ role, allowedRoles, children }) {
@@ -94,13 +94,13 @@ function AppContent() {
         });
     } else {
         // Authenticated Nav Items
-        if (role === 'psw' || role === 'coordinator') {
+        if (role === 'psw') {
             navItems.push({ url: '/', name: 'PSW Dashboard', icon: LayoutDashboard });
         }
         if (role === 'coordinator') {
             navItems.push({ url: '/coordinator', name: 'Coordinator', icon: Users });
         }
-        if (role === 'family' || role === 'coordinator') {
+        if (role === 'family') {
             navItems.push({ url: '/family', name: 'Family Portal', icon: Home });
         }
     }
@@ -199,7 +199,7 @@ function AppContent() {
                         <Route
                             path="/"
                             element={
-                                <ProtectedRoute role={role} allowedRoles={['psw', 'coordinator']}>
+                                <ProtectedRoute role={role} allowedRoles={['psw']}>
                                     <PSWDashboard />
                                 </ProtectedRoute>
                             }
@@ -215,7 +215,7 @@ function AppContent() {
                         <Route
                             path="/family"
                             element={
-                                <ProtectedRoute role={role} allowedRoles={['family', 'coordinator']}>
+                                <ProtectedRoute role={role} allowedRoles={['family']}>
                                     <FamilyPortal />
                                 </ProtectedRoute>
                             }

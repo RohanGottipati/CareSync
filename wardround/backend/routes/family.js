@@ -1,25 +1,36 @@
 /**
- * Family Comms Agent: draft two messages to family members.
- * POST /api/family/draft { clientId, context? }
+ * Family routes:
+ *   GET  /api/family/summaries?clientId=...  — fetch nightly summaries for a client
+ *   POST /api/family/draft { clientId, context? }  — manual draft (coordinator)
  *
- * On the first call for a client, seeds two family member profiles
- * into the thread memory so the agent has realistic context.
- *
- * Returns:
- *   { clientId, drafts: [{ recipient, role, message }, ...] }
+ * Manual trigger for nightly summaries is at POST /api/debug/family-summaries (debug.js).
  */
 
 import express from 'express';
 import * as backboard from '../services/backboard.js';
-import { getClientThread, setClientThread, getClientById } from '../db.js';
+import { getClientThread, setClientThread, getClientById, getFamilySummaries } from '../db.js';
 
 const router = express.Router();
 
-// Two default family contacts seeded into every new family thread
-const FAMILY_MEMBERS = [
-    { name: 'Margaret', role: 'daughter (primary contact)', tone: 'warm and detailed' },
-    { name: 'James', role: 'son (power of attorney)', tone: 'concise and factual' },
+// Default family contacts for new threads (overridden per-client via client.family_members if set)
+const DEFAULT_FAMILY_MEMBERS = [
+    { name: 'Linda', role: 'daughter (primary contact)', tone: 'warm and detailed' },
+    { name: 'David', role: 'son (power of attorney)', tone: 'concise and factual' },
 ];
+
+// ── GET /api/family/summaries?clientId=... ────────────────────────────────────
+router.get('/summaries', async (req, res) => {
+    try {
+        const { clientId } = req.query;
+        if (!clientId) return res.status(400).json({ error: 'clientId query param required' });
+
+        const summaries = await getFamilySummaries(clientId, 30);
+        res.json({ clientId, summaries });
+    } catch (err) {
+        console.error('[family/summaries] error:', err);
+        res.status(500).json({ error: err.message || 'Failed to fetch summaries' });
+    }
+});
 
 router.post('/draft', async (req, res) => {
     try {
@@ -42,6 +53,11 @@ router.post('/draft', async (req, res) => {
         let threadId = await getClientThread(clientId, 'family');
         const isNewThread = !threadId;
 
+        // Use per-client family members if the client record has them, else defaults
+        const familyMembers = client.family_members
+            ? JSON.parse(client.family_members)
+            : DEFAULT_FAMILY_MEMBERS;
+
         if (isNewThread) {
             const created = await backboard.createThread(assistantId);
             threadId = created.thread_id;
@@ -50,7 +66,7 @@ router.post('/draft', async (req, res) => {
             // Seed family profiles into memory so all future drafts have context
             const familyProfile = [
                 `FAMILY CONTACTS for ${client.name}:`,
-                ...FAMILY_MEMBERS.map(m => `- ${m.name}: ${m.role}`),
+                ...familyMembers.map(m => `- ${m.name}: ${m.role}`),
                 '',
                 'Always address each message to the correct family member by name.',
                 'Keep messages professional, empathetic, and focused on the client\'s wellbeing.',
@@ -74,7 +90,7 @@ router.post('/draft', async (req, res) => {
         const extraContext = context ? `\n\nAdditional context for today: ${context}` : '';
 
         const drafts = await Promise.all(
-            FAMILY_MEMBERS.map(async (member) => {
+            familyMembers.map(async (member) => {
                 const prompt = [
                     `Draft a ${member.tone} message addressed to ${member.name} (${member.role}).`,
                     `The message should update them on ${client.name}'s recent care and wellbeing.`,

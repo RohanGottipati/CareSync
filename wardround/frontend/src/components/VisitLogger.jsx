@@ -8,6 +8,17 @@ import { useApi } from '../useApi';
  *   clientId — string, the selected client's UUID (required)
  */
 
+const SESSION_TYPE_OPTIONS = [
+    { value: '', label: '— Select session type —' },
+    { value: 'Morning', label: '🌅 Morning' },
+    { value: 'Afternoon', label: '☀️ Afternoon' },
+    { value: 'Evening', label: '🌆 Evening' },
+    { value: 'Overnight', label: '🌙 Overnight' },
+    { value: 'Medication round', label: '💊 Medication round' },
+    { value: 'Personal care', label: '🛁 Personal care' },
+    { value: 'Other', label: '📋 Other' },
+];
+
 const MOOD_OPTIONS = [
     { value: '', label: '— Select mood —' },
     { value: 'Good', label: '😊 Good' },
@@ -20,6 +31,7 @@ const MOOD_OPTIONS = [
 export default function VisitLogger({ clientId }) {
     const { fetchWithAuth } = useApi();
 
+    const [sessionType, setSessionType] = useState('');
     const [medications, setMedications] = useState('');
     const [mood, setMood] = useState('');
     const [observations, setObservations] = useState('');
@@ -66,12 +78,14 @@ export default function VisitLogger({ clientId }) {
                         temp: vitals.temp || undefined,
                     },
                     flaggedConcerns: concerns,
+                    sessionType: sessionType || undefined,
                 }),
             });
 
             setStatus('success');
             // Reset after 3 s
             setTimeout(() => {
+                setSessionType('');
                 setMedications(''); setMood(''); setObservations('');
                 setConcerns([]); setConcern('');
                 setVitals({ bp: '', weight: '', temp: '' });
@@ -129,6 +143,14 @@ export default function VisitLogger({ clientId }) {
 
             {clientId && (
                 <form onSubmit={handleSubmit}>
+                    {/* Session Type */}
+                    <div style={fieldGroup}>
+                        <label style={label}>Session Type</label>
+                        <select value={sessionType} onChange={e => setSessionType(e.target.value)} style={{ ...inputBase, cursor: 'pointer' }}>
+                            {SESSION_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                    </div>
+
                     {/* Medications */}
                     <div style={fieldGroup}>
                         <label style={label}>Medications Given</label>
@@ -177,7 +199,8 @@ export default function VisitLogger({ clientId }) {
                                 padding: '0.5rem 0.9rem', fontSize: '0.8rem', fontWeight: 600,
                                 background: '#fef3c7', color: '#92400e',
                                 border: '1px solid #fde68a', borderRadius: '8px', cursor: 'pointer',
-                                whiteSpace: 'nowrap',
+                                whiteSpace: 'nowrap', flexShrink: 0,
+                                display: 'inline-flex', alignItems: 'center',
                             }}>Add</button>
                         </div>
                         {concerns.length > 0 && (
@@ -192,7 +215,10 @@ export default function VisitLogger({ clientId }) {
                                         ⚠️ {c}
                                         <button type="button" onClick={() => removeConcern(c)} style={{
                                             background: 'none', border: 'none', cursor: 'pointer',
-                                            fontSize: '0.8rem', color: '#ef4444', padding: 0, lineHeight: 1,
+                                            fontSize: '0.8rem', color: '#ef4444',
+                                            padding: '0.15rem', lineHeight: 1,
+                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                            minWidth: '16px', minHeight: '16px',
                                         }}>✕</button>
                                     </span>
                                 ))}
@@ -205,9 +231,11 @@ export default function VisitLogger({ clientId }) {
                         <button type="button" onClick={() => setShowVitals(v => !v)} style={{
                             background: 'none', border: 'none', cursor: 'pointer',
                             fontSize: '0.8rem', fontWeight: 600, color: '#2563eb',
-                            padding: 0, display: 'flex', alignItems: 'center', gap: '0.3rem',
+                            padding: '0.3rem 0.5rem', margin: '-0.3rem -0.5rem',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
                         }}>
-                            {showVitals ? '▾' : '▸'} Vitals (optional)
+                            <span style={{ pointerEvents: 'none' }}>{showVitals ? '▾' : '▸'}</span>
+                            <span style={{ pointerEvents: 'none' }}>Vitals (optional)</span>
                         </button>
                         {showVitals && (
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginTop: '0.6rem' }}>
@@ -246,9 +274,12 @@ export default function VisitLogger({ clientId }) {
                             width: '100%', padding: '0.7rem',
                             background: status === 'success' ? '#10b981' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                             color: 'white', border: 'none', borderRadius: '10px',
-                            fontSize: '0.9rem', fontWeight: 600, cursor: status === 'submitting' ? 'not-allowed' : 'pointer',
+                            fontSize: '0.9rem', fontWeight: 600,
+                            cursor: status === 'submitting' ? 'not-allowed' : 'pointer',
                             transition: 'opacity 0.2s',
                             opacity: status === 'submitting' ? 0.7 : 1,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            minHeight: '42px',
                         }}
                     >
                         {status === 'submitting' ? 'Submitting…'
