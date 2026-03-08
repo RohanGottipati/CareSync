@@ -1,0 +1,34 @@
+{
+  "name": "wardround-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend for Wardround",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/s3-request-presigner": "^3.700.0",
+    "bull": "^4.11.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-oauth2-jwt-bearer": "^1.7.4",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.1",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "database.json"
+    ]
+  }
+}
