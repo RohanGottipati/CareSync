@@ -602,6 +602,172 @@ function DocumentsTab() {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   ADMIN TAB — manage users without roles
+────────────────────────────────────────────────────────────── */
+function AdminTab() {
+    const { fetchWithAuth } = useApi();
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [selectedRoles, setSelectedRoles] = useState({});   // { userId: 'psw' }
+    const [saving, setSaving] = useState({});                  // { userId: true }
+    const [success, setSuccess] = useState({});                // { userId: 'psw' }
+
+    const reload = useCallback(() => {
+        setLoading(true);
+        setError('');
+        fetchWithAuth('/admin/users/unassigned')
+            .then(d => setUsers(d.users || []))
+            .catch(e => setError(e.message))
+            .finally(() => setLoading(false));
+    }, [fetchWithAuth]);
+
+    useEffect(() => { reload(); }, [reload]);
+
+    const assignRole = async (userId) => {
+        const role = selectedRoles[userId];
+        if (!role) return;
+        setSaving(s => ({ ...s, [userId]: true }));
+        try {
+            await fetchWithAuth(`/admin/users/${encodeURIComponent(userId)}/role`, {
+                method: 'POST',
+                body: JSON.stringify({ role }),
+            });
+            setSuccess(s => ({ ...s, [userId]: role }));
+            // Remove from list after brief delay so user sees the success message
+            setTimeout(() => {
+                setUsers(u => u.filter(x => x.user_id !== userId));
+                setSuccess(s => { const n = { ...s }; delete n[userId]; return n; });
+            }, 1500);
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setSaving(s => { const n = { ...s }; delete n[userId]; return n; });
+        }
+    };
+
+    const roleBadge = (role) => {
+        const colors = {
+            coordinator: { bg: '#f0fdf4', border: '#bbf7d0', color: '#15803d' },
+            psw: { bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8' },
+            family: { bg: '#fef3c7', border: '#fde68a', color: '#92400e' },
+        };
+        const c = colors[role] || { bg: '#f1f5f9', border: '#e2e8f0', color: '#475569' };
+        return {
+            display: 'inline-flex', padding: '0.15rem 0.55rem', borderRadius: '9999px',
+            background: c.bg, border: `1px solid ${c.border}`, color: c.color,
+            fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em',
+        };
+    };
+
+    return (
+        <div>
+            {error && (
+                <div style={{ padding: '0.75rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#b91c1c', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    ⚠️ {error}
+                    <button onClick={() => setError('')} style={{ float: 'right', border: 'none', background: 'none', cursor: 'pointer', color: '#b91c1c', fontWeight: 700 }}>✕</button>
+                </div>
+            )}
+
+            <div style={{ marginBottom: '1.25rem', padding: '1rem 1.25rem', background: '#eff6ff', borderRadius: '12px', border: '1px solid #bfdbfe', fontSize: '0.875rem', color: '#1e40af' }}>
+                <strong>User Role Management</strong> — Users listed below have signed up but have not been assigned a role. Select a role and click <em>Grant</em> to give them access.
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>
+                    {loading ? 'Loading…' : `${users.length} user${users.length !== 1 ? 's' : ''} without a role`}
+                </p>
+                <button style={btnGhost} onClick={reload} disabled={loading}>↻ Refresh</button>
+            </div>
+
+            {!loading && users.length === 0 && (
+                <div style={{
+                    padding: '2.5rem', textAlign: 'center',
+                    background: '#f8fafc', borderRadius: '12px', border: '1px dashed #e2e8f0',
+                }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
+                    <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>
+                        All users have roles assigned. Nothing to do!
+                    </p>
+                </div>
+            )}
+
+            {users.length > 0 && (
+                <div style={card}>
+                    <table style={tableStyle}>
+                        <thead>
+                            <tr>
+                                <th style={th}>Email</th>
+                                <th style={th}>Provider</th>
+                                <th style={th}>Name</th>
+                                <th style={th}>Signed Up</th>
+                                <th style={th}>Role</th>
+                                <th style={th}></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {users.map(u => (
+                                <tr key={u.user_id}>
+                                    <td style={{ ...td, fontWeight: 600 }}>{u.email}</td>
+                                    <td style={td}>
+                                        <span style={{
+                                            display: 'inline-flex', padding: '0.15rem 0.5rem', borderRadius: '9999px',
+                                            background: u.provider === 'google-oauth2' ? '#fef3c7' : u.provider === 'windowslive' ? '#e0f2fe' : '#f1f5f9',
+                                            border: `1px solid ${u.provider === 'google-oauth2' ? '#fde68a' : u.provider === 'windowslive' ? '#bae6fd' : '#e2e8f0'}`,
+                                            color: u.provider === 'google-oauth2' ? '#92400e' : u.provider === 'windowslive' ? '#0369a1' : '#475569',
+                                            fontSize: '0.7rem', fontWeight: 600,
+                                        }}>
+                                            {u.provider === 'google-oauth2' ? 'Google' : u.provider === 'windowslive' ? 'Microsoft' : u.provider === 'auth0' ? 'Email/Pass' : u.provider}
+                                        </span>
+                                    </td>
+                                    <td style={{ ...td, ...muted }}>{u.name || '—'}</td>
+                                    <td style={{ ...td, ...muted }}>
+                                        {u.created_at ? new Date(u.created_at).toLocaleDateString('en-CA') : '—'}
+                                    </td>
+                                    <td style={td}>
+                                        {success[u.user_id] ? (
+                                            <span style={roleBadge(success[u.user_id])}>{success[u.user_id]}</span>
+                                        ) : (
+                                            <select
+                                                style={{ ...inputStyle, maxWidth: 140 }}
+                                                value={selectedRoles[u.user_id] || ''}
+                                                onChange={e => setSelectedRoles(s => ({ ...s, [u.user_id]: e.target.value }))}
+                                            >
+                                                <option value="">— select —</option>
+                                                <option value="coordinator">Coordinator</option>
+                                                <option value="psw">PSW</option>
+                                                <option value="family">Family</option>
+                                            </select>
+                                        )}
+                                    </td>
+                                    <td style={{ ...td, textAlign: 'right' }}>
+                                        {success[u.user_id] ? (
+                                            <span style={{ color: '#15803d', fontWeight: 600, fontSize: '0.85rem' }}>✓ Granted</span>
+                                        ) : (
+                                            <button
+                                                style={{
+                                                    ...btnPrimary,
+                                                    opacity: (!selectedRoles[u.user_id] || saving[u.user_id]) ? 0.5 : 1,
+                                                    cursor: (!selectedRoles[u.user_id] || saving[u.user_id]) ? 'not-allowed' : 'pointer',
+                                                }}
+                                                onClick={() => assignRole(u.user_id)}
+                                                disabled={!selectedRoles[u.user_id] || saving[u.user_id]}
+                                            >
+                                                {saving[u.user_id] ? 'Granting…' : 'Grant Role'}
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ──────────────────────────────────────────────────────────────
    MAIN COORDINATOR DASHBOARD
 ────────────────────────────────────────────────────────────── */
 const TABS = [
@@ -609,6 +775,7 @@ const TABS = [
     { id: 'assignments', label: 'Assignments', icon: '📋' },
     { id: 'sentinel', label: 'Sentinel', icon: '🛡' },
     { id: 'documents', label: 'Documents', icon: '📂' },
+    { id: 'admin', label: 'Admin', icon: '⚙️' },
 ];
 
 export default function CoordinatorDashboard() {
@@ -663,6 +830,7 @@ export default function CoordinatorDashboard() {
             {activeTab === 'assignments' && <AssignmentsTab />}
             {activeTab === 'sentinel' && <SentinelTab />}
             {activeTab === 'documents' && <DocumentsTab />}
+            {activeTab === 'admin' && <AdminTab />}
         </div>
     );
 }
