@@ -266,7 +266,12 @@ function AssignmentsTab() {
     const add = async () => {
         setSaving(true);
         try {
-            await fetchWithAuth('/clients/assignments', { method: 'POST', body: JSON.stringify(form) });
+            const payload = {
+                ...form,
+                shiftStart: form.shiftStart ? new Date(form.shiftStart).toISOString() : '',
+                shiftEnd: form.shiftEnd ? new Date(form.shiftEnd).toISOString() : '',
+            };
+            await fetchWithAuth('/clients/assignments', { method: 'POST', body: JSON.stringify(payload) });
             setShowForm(false);
             setForm({ clientId: '', pswUserId: '', shiftStart: '', shiftEnd: '' });
             reload();

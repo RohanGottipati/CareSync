@@ -43,11 +43,25 @@ export async function initSchema() {
             id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             client_id    UUID        NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
             psw_user_id  VARCHAR(255) NOT NULL,
+            psw_email    VARCHAR(255),
             shift_start  TIMESTAMPTZ NOT NULL,
             shift_end    TIMESTAMPTZ NOT NULL,
             set_by       VARCHAR(255) NOT NULL,
             created_at   TIMESTAMPTZ DEFAULT NOW()
         );
+    `);
+
+    // If psw_email was added with NOT NULL elsewhere, allow NULL so assignment by User ID works
+    await pool.query(`
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = 'assignments' AND column_name = 'psw_email'
+            ) THEN
+                ALTER TABLE assignments ALTER COLUMN psw_email DROP NOT NULL;
+            END IF;
+        END $$;
     `);
 
     console.log('Database schema initialised.');

@@ -142,6 +142,24 @@ export async function getActiveAssignmentsForPsw(pswUserId) {
     return rows;
 }
 
+/**
+ * Get current and upcoming assignments for a PSW (shift has not ended yet).
+ * Lets PSWs see today's and future shifts, not only the one active this moment.
+ */
+export async function getCurrentAndUpcomingAssignmentsForPsw(pswUserId) {
+    const { rows } = await pool.query(
+        `SELECT a.*, c.name AS client_name, c.medications, c.conditions, c.notes AS client_notes,
+                (a.shift_start <= NOW() AND a.shift_end >= NOW()) AS is_active_now
+         FROM assignments a
+         JOIN clients c ON c.id = a.client_id
+         WHERE a.psw_user_id = $1
+           AND a.shift_end >= NOW()
+         ORDER BY a.shift_start`,
+        [pswUserId]
+    );
+    return rows;
+}
+
 /** Get all assignments (coordinator view). */
 export async function getAllAssignments() {
     const { rows } = await pool.query(
@@ -160,13 +178,28 @@ export async function deleteAssignment(assignmentId) {
 
 /**
  * Check whether a PSW is currently assigned to a specific client.
- * Used to gate briefing/visit access.
+ * Used to gate visit access (shift must be active now).
  */
 export async function isPswAssignedToClient(pswUserId, clientId) {
     const { rows } = await pool.query(
         `SELECT 1 FROM assignments
          WHERE psw_user_id = $1 AND client_id = $2
            AND shift_start <= NOW() AND shift_end >= NOW()
+         LIMIT 1`,
+        [pswUserId, clientId]
+    );
+    return rows.length > 0;
+}
+
+/**
+ * Check whether a PSW can access the pre-visit briefing for a client.
+ * Allowed for any current or upcoming assignment (shift not ended yet).
+ */
+export async function canPswAccessBriefingForClient(pswUserId, clientId) {
+    const { rows } = await pool.query(
+        `SELECT 1 FROM assignments
+         WHERE psw_user_id = $1 AND client_id = $2
+           AND shift_end >= NOW()
          LIMIT 1`,
         [pswUserId, clientId]
     );

@@ -23,13 +23,14 @@ export default function PSWDashboard() {
             .then(data => {
                 const list = data.clients || [];
                 setClients(list);
-                if (list.length === 1) setSelectedId(list[0].id);
+                if (list.length === 1) setSelectedId(clientIdFrom(list[0]));
             })
             .catch(err => setClientsError(err.message))
             .finally(() => setLoadingClients(false));
     }, [fetchWithAuth, isCoordinator]);
 
-    const selectedClient = clients.find(c => c.id === selectedId);
+    const clientIdFrom = (c) => (isCoordinator ? c.id : c.client_id);
+    const selectedClient = clients.find(c => clientIdFrom(c) === selectedId);
     const firstName = user?.name?.split(' ')[0] || 'there';
 
     /* ── styles ─── */
@@ -93,7 +94,7 @@ export default function PSWDashboard() {
                     borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0',
                     fontSize: '0.875rem', color: '#64748b',
                 }}>
-                    You have no clients assigned to your current shift. Contact your coordinator.
+                    You have no current or upcoming client assignments. Contact your coordinator.
                 </div>
             )}
             {!loadingClients && clients.length > 0 && (
@@ -109,8 +110,8 @@ export default function PSWDashboard() {
                     >
                         {clients.length > 1 && <option value="">— select a client —</option>}
                         {clients.map(c => (
-                            <option key={c.id} value={c.id}>
-                                {c.name || c.client_name}
+                            <option key={c.id} value={clientIdFrom(c)}>
+                                {isCoordinator ? (c.name || c.client_name) : clientLabel(c)}
                             </option>
                         ))}
                     </select>
@@ -143,4 +144,22 @@ function hour() {
     if (h < 12) return 'morning';
     if (h < 18) return 'afternoon';
     return 'evening';
+}
+
+const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const shiftOpts = { timeZone: localTz, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+const timeOpts = { timeZone: localTz, hour: '2-digit', minute: '2-digit' };
+
+function clientLabel(c) {
+    const name = c.client_name || c.name || 'Client';
+    if (c.is_active_now) return `${name} — Current shift`;
+    if (c.shift_start) {
+        const start = new Date(c.shift_start);
+        const end = c.shift_end ? new Date(c.shift_end) : null;
+        const range = end
+            ? start.toLocaleString('en-CA', shiftOpts) + ' – ' + end.toLocaleTimeString('en-CA', timeOpts)
+            : start.toLocaleString('en-CA', shiftOpts);
+        return `${name} — Upcoming: ${range}`;
+    }
+    return name;
 }
