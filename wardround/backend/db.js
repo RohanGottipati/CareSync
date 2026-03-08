@@ -70,21 +70,23 @@ export async function getClientById(clientId) {
 }
 
 /** Create a new client (coordinator only). */
-export async function createClient({ name, dateOfBirth, medications, conditions, notes }) {
+export async function createClient({ name, dateOfBirth, medications, conditions, notes, familyMembers }) {
+    const familyMembersJson = familyMembers != null ? JSON.stringify(familyMembers) : null;
     const { rows } = await pool.query(
-        `INSERT INTO clients (name, date_of_birth, medications, conditions, notes)
-         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [name, dateOfBirth || null, medications || null, conditions || null, notes || null]
+        `INSERT INTO clients (name, date_of_birth, medications, conditions, notes, family_members)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [name, dateOfBirth || null, medications || null, conditions || null, notes || null, familyMembersJson]
     );
     return rows[0];
 }
 
 /** Update a client. */
-export async function updateClient(clientId, { name, dateOfBirth, medications, conditions, notes }) {
+export async function updateClient(clientId, { name, dateOfBirth, medications, conditions, notes, familyMembers }) {
+    const familyMembersJson = familyMembers != null ? JSON.stringify(familyMembers) : null;
     const { rows } = await pool.query(
         `UPDATE clients SET name = $1, date_of_birth = $2, medications = $3,
-         conditions = $4, notes = $5 WHERE id = $6 RETURNING *`,
-        [name, dateOfBirth || null, medications || null, conditions || null, notes || null, clientId]
+         conditions = $4, notes = $5, family_members = $6 WHERE id = $7 RETURNING *`,
+        [name, dateOfBirth || null, medications || null, conditions || null, notes || null, familyMembersJson, clientId]
     );
     return rows[0] ?? null;
 }

@@ -81,11 +81,11 @@ router.get('/:id', requireRole('coordinator'), async (req, res) => {
 // ── Coordinator: create client + provision Backboard thread ───────────────────
 router.post('/', requireRole('coordinator'), async (req, res) => {
     try {
-        const { name, dateOfBirth, medications, conditions, notes } = req.body || {};
+        const { name, dateOfBirth, medications, conditions, notes, familyMembers } = req.body || {};
         if (!name) return res.status(400).json({ error: 'name required' });
 
         // 1. Save client record to Postgres
-        const client = await createClient({ name, dateOfBirth, medications, conditions, notes });
+        const client = await createClient({ name, dateOfBirth, medications, conditions, notes, familyMembers });
 
         // 2. Provision a Backboard handoff thread for this client
         const assistantId = getAssistantId('handoff');
@@ -122,9 +122,9 @@ router.post('/', requireRole('coordinator'), async (req, res) => {
 // ── Coordinator: update client ────────────────────────────────────────────────
 router.put('/:id', requireRole('coordinator'), async (req, res) => {
     try {
-        const { name, dateOfBirth, medications, conditions, notes } = req.body || {};
+        const { name, dateOfBirth, medications, conditions, notes, familyMembers } = req.body || {};
         if (!name) return res.status(400).json({ error: 'name required' });
-        const client = await updateClient(req.params.id, { name, dateOfBirth, medications, conditions, notes });
+        const client = await updateClient(req.params.id, { name, dateOfBirth, medications, conditions, notes, familyMembers });
         if (!client) return res.status(404).json({ error: 'Client not found' });
         res.json({ client });
     } catch (err) {

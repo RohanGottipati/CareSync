@@ -29,8 +29,8 @@ const JOHN_PROFILE = {
     medications: "Levodopa/Carbidopa 100/25mg (three times daily), Pramipexole 0.5mg (twice daily), Tiotropium inhaler (once daily), Metformin 850mg (twice daily), Sertraline 50mg (morning), Baclofen 10mg (PRN for back spasms)",
     notes: "John requires fall precautions at all times — Parkinson's significantly affects gait and balance. Uses a rollator walker indoors. Wife Susan (416-555-0241) is primary contact and visits daily. Daughter Rachel (416-555-0198) is alternate contact. Levodopa timing is critical — must be taken 30 min before meals for optimal effect. COPD inhaler use needs monitoring; John sometimes forgets morning dose. Prefers news radio in the background. Responds poorly to rushed interactions — allow extra time. No known drug allergies.",
     family_members: JSON.stringify([
-        { name: 'Susan', role: 'wife (primary contact)', tone: 'warm and detailed' },
-        { name: 'Rachel', role: 'daughter (alternate contact)', tone: 'concise and practical' },
+        { name: 'Susan', role: 'wife (primary contact)', tone: 'warm and detailed', email: 'susan.stone@example.com' },
+        { name: 'Rachel', role: 'daughter (alternate contact)', tone: 'concise and practical', email: 'rachel.stone@example.com' },
     ]),
 };
 

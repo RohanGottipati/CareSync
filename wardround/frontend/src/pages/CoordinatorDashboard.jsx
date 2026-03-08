@@ -68,11 +68,34 @@ const muted = { color: '#94a3b8', fontSize: '0.8rem' };
 /* ──────────────────────────────────────────────────────────────
    CLIENT FORM (Add / Edit)
 ────────────────────────────────────────────────────────────── */
+const emptyMember = () => ({ name: '', role: '', email: '' });
+
 function ClientForm({ initial, onSave, onCancel, saving }) {
     const [form, setForm] = useState(initial || {
         name: '', dateOfBirth: '', conditions: '', medications: '', notes: '',
     });
+    const [familyMembers, setFamilyMembers] = useState(() => {
+        if (initial?.familyMembers && Array.isArray(initial.familyMembers)) {
+            return initial.familyMembers.map(m => ({ name: m.name || '', role: m.role || '', email: m.email || '' }));
+        }
+        return [];
+    });
+
     const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+
+    const setMember = (idx, field) => (e) => {
+        const val = e.target.value;
+        setFamilyMembers(prev => prev.map((m, i) => i === idx ? { ...m, [field]: val } : m));
+    };
+    const addMember = () => setFamilyMembers(prev => [...prev, emptyMember()]);
+    const removeMember = (idx) => setFamilyMembers(prev => prev.filter((_, i) => i !== idx));
+
+    const handleSave = () => {
+        const cleanedMembers = familyMembers.filter(m => m.name.trim());
+        onSave({ ...form, familyMembers: cleanedMembers.length > 0 ? cleanedMembers : undefined });
+    };
+
+    const memberInputStyle = { ...inputStyle, padding: '0.4rem 0.6rem', fontSize: '0.82rem' };
 
     return (
         <div style={{
@@ -100,10 +123,56 @@ function ClientForm({ initial, onSave, onCancel, saving }) {
             <div style={{ marginBottom: '0.75rem' }}>
                 <label style={labelStyle}>Care Notes</label>
                 <textarea style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }}
-                    value={form.notes} onChange={set('notes')} placeholder="Behavioural notes, mobility, family contacts…" />
+                    value={form.notes} onChange={set('notes')} placeholder="Behavioural notes, mobility, care preferences…" />
             </div>
+
+            {/* ── Family Contacts ── */}
+            <div style={{ marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem' }}>
+                    <label style={labelStyle}>Family Contacts</label>
+                    <button type="button" style={{ ...btnGhost, fontSize: '0.75rem', padding: '0.25rem 0.65rem', minHeight: '28px' }} onClick={addMember}>
+                        + Add Contact
+                    </button>
+                </div>
+                {familyMembers.length === 0 && (
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>
+                        No contacts yet — nightly care updates will not be emailed until at least one contact with an email address is added.
+                    </p>
+                )}
+                {familyMembers.map((m, idx) => (
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr auto', gap: '0.5rem', marginBottom: '0.45rem', alignItems: 'center' }}>
+                        <input
+                            style={memberInputStyle}
+                            value={m.name}
+                            onChange={setMember(idx, 'name')}
+                            placeholder="Name"
+                        />
+                        <input
+                            style={memberInputStyle}
+                            value={m.role}
+                            onChange={setMember(idx, 'role')}
+                            placeholder="Role (e.g. daughter)"
+                        />
+                        <input
+                            style={memberInputStyle}
+                            type="email"
+                            value={m.email}
+                            onChange={setMember(idx, 'email')}
+                            placeholder="Email address"
+                        />
+                        <button
+                            type="button"
+                            style={{ ...btnDanger, padding: '0.25rem 0.55rem', minHeight: '28px', fontSize: '0.75rem' }}
+                            onClick={() => removeMember(idx)}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                ))}
+            </div>
+
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button style={btnPrimary} onClick={() => onSave(form)} disabled={saving || !form.name}>
+                <button style={btnPrimary} onClick={handleSave} disabled={saving || !form.name}>
                     {saving ? 'Saving…' : initial ? 'Save Changes' : 'Add Client'}
                 </button>
                 <button style={btnGhost} onClick={onCancel}>Cancel</button>
@@ -247,7 +316,17 @@ function ClientsTab() {
                                         <tr>
                                             <td colSpan={5} style={{ padding: '0.5rem 0.85rem' }}>
                                                 <ClientForm
-                                                    initial={{ name: c.name, dateOfBirth: c.date_of_birth || '', conditions: c.conditions || '', medications: c.medications || '', notes: c.notes || '' }}
+                                                    initial={{
+                                                        name: c.name,
+                                                        dateOfBirth: c.date_of_birth || '',
+                                                        conditions: c.conditions || '',
+                                                        medications: c.medications || '',
+                                                        notes: c.notes || '',
+                                                        familyMembers: (() => {
+                                                            try { return c.family_members ? JSON.parse(c.family_members) : []; }
+                                                            catch { return []; }
+                                                        })(),
+                                                    }}
                                                     onSave={(form) => editClient(c.id, form)}
                                                     onCancel={() => setEditId(null)}
                                                     saving={saving}

@@ -16,6 +16,7 @@ import {
     insertFamilySummary,
 } from './db.js';
 import * as backboard from './services/backboard.js';
+import { sendFamilyUpdateEmail, sendCoordinatorDiscrepancyAlert } from './services/email.js';
 
 const SENTINEL_CRON = '0 2 * * *';
 const FAMILY_SUMMARY_CRON = '0 1 * * *';
@@ -134,6 +135,19 @@ export async function runMedicationSentinel() {
         })
     );
 
+    // Email the coordinator for every client that was FLAGGED
+    const flagged = results.filter(r => r.status === 'FLAGGED');
+    if (flagged.length > 0) {
+        try {
+            await sendCoordinatorDiscrepancyAlert({
+                flaggedResults: flagged,
+                appUrl: process.env.APP_URL || process.env.CORS_ORIGIN,
+            });
+        } catch (emailErr) {
+            console.warn('[Sentinel] Coordinator email failed (non-fatal):', emailErr.message);
+        }
+    }
+
     return results;
 }
 
@@ -195,6 +209,27 @@ export async function runFamilySummaries() {
 
                 await insertFamilySummary({ clientId: client.id, summaryDate: today, summaryText });
                 console.log(`[FamilySummary] Saved summary for ${client.name}`);
+
+                // Email each family member that has an email address on file
+                const familyMembers = client.family_members
+                    ? JSON.parse(client.family_members)
+                    : [];
+                const membersWithEmail = familyMembers.filter(m => m.email);
+                if (membersWithEmail.length === 0) {
+                    console.log(`[FamilySummary] No family email addresses for ${client.name} — skipping email.`);
+                } else {
+                    await Promise.all(
+                        membersWithEmail.map(member =>
+                            sendFamilyUpdateEmail({
+                                to: member.email,
+                                clientName: client.name,
+                                summaryDate: today,
+                                summaryText,
+                            })
+                        )
+                    );
+                }
+
                 return { name: client.name, clientId: client.id, date: today, ok: true };
             } catch (err) {
                 console.warn(`[FamilySummary] Failed for ${client.name}:`, err.message);

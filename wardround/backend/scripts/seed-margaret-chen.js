@@ -30,8 +30,8 @@ const MARGARET_PROFILE = {
     medications: 'Metformin 500mg (twice daily), Donepezil 10mg (nightly), Lisinopril 10mg (morning), Amlodipine 5mg (morning), Acetaminophen 500mg (PRN for pain)',
     notes: 'Margaret prefers routine. Responds well to gentle reminders. Enjoys listening to classical music and feeding birds on the balcony. Daughter Linda Chen (416-555-0182) is primary contact. Son David Chen (416-555-0173) holds POA. Allergic to penicillin. Keep environment low-stimulation in the evenings to reduce sundowning.',
     family_members: JSON.stringify([
-        { name: 'Linda', role: 'daughter (primary contact)', tone: 'warm and detailed' },
-        { name: 'David', role: 'son (power of attorney)', tone: 'concise and factual' },
+        { name: 'Linda', role: 'daughter (primary contact)', tone: 'warm and detailed', email: 'linda.chen@example.com' },
+        { name: 'David', role: 'son (power of attorney)', tone: 'concise and factual', email: 'david.chen@example.com' },
     ]),
 };
 
