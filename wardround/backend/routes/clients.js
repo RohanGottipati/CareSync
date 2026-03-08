@@ -22,18 +22,19 @@ import {
     setClientThread,
     createAssignment,
     getAllAssignments,
-    getActiveAssignmentsForPsw,
+    getCurrentAndUpcomingAssignmentsForPsw,
     deleteAssignment,
+    getSentinelResult,
 } from '../db.js';
 import { requireRole } from '../middleware/auth.js';
 import { getAssistantId, createThread, writeMemory } from '../services/backboard.js';
 
 const router = express.Router();
 
-// ── PSW: get my currently assigned clients ────────────────────────────────────
+// ── PSW: get my current and upcoming assigned clients ────────────────────────
 router.get('/my-clients', requireRole('psw', 'coordinator'), async (req, res) => {
     try {
-        const assignments = await getActiveAssignmentsForPsw(req.user.id);
+        const assignments = await getCurrentAndUpcomingAssignmentsForPsw(req.user.id);
         res.json({ clients: assignments });
     } catch (err) {
         console.error('my-clients error:', err);
@@ -41,13 +42,24 @@ router.get('/my-clients', requireRole('psw', 'coordinator'), async (req, res) =>
     }
 });
 
-// ── Coordinator: list all clients ─────────────────────────────────────────────
-router.get('/', requireRole('coordinator'), async (req, res) => {
+// ── List all clients (coordinator + family view) ──────────────────────────────
+router.get('/', requireRole('coordinator', 'family'), async (req, res) => {
     try {
         const clients = await getAllClients();
         res.json({ clients });
     } catch (err) {
         console.error('GET /clients error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Sentinel result for a single client (PSW + coordinator) ───────────────────
+router.get('/:id/sentinel', requireRole('psw', 'coordinator'), async (req, res) => {
+    try {
+        const result = await getSentinelResult(req.params.id);
+        res.json({ sentinel: result || null });
+    } catch (err) {
+        console.error('GET /clients/:id/sentinel error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -137,11 +149,14 @@ router.post('/assignments', requireRole('coordinator'), async (req, res) => {
         if (!clientId || !pswUserId || !shiftStart || !shiftEnd) {
             return res.status(400).json({ error: 'clientId, pswUserId, shiftStart, shiftEnd required' });
         }
+        // Normalise to UTC ISO so stored times match coordinator's intended local time
+        const startUtc = new Date(shiftStart).toISOString();
+        const endUtc = new Date(shiftEnd).toISOString();
         const assignment = await createAssignment({
             clientId,
             pswUserId,
-            shiftStart,
-            shiftEnd,
+            shiftStart: startUtc,
+            shiftEnd: endUtc,
             setBy: req.user.id,
         });
         res.status(201).json({ assignment });

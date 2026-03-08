@@ -12,6 +12,7 @@
  * - Cost-effective: Pay for storage and egress without managing disks on the VPS.
  *
  * Endpoint format: https://<region>.vultrobjects.com (e.g. ewr1.vultrobjects.com).
+ * Vultr recommends virtual-host style: bucket.region.vultrobjects.com.
  * Credentials: from Vultr Customer Portal → Object Storage → S3 Credentials.
  */
 
@@ -22,20 +23,37 @@ import {
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 
 const bucket = process.env.VULTR_STORAGE_BUCKET || 'wardround-documents';
 const region = process.env.VULTR_STORAGE_REGION || 'ewr1';
 
+// S3 client requires endpoint without trailing slash to avoid Invalid URI errors
+function normalizeEndpoint(url) {
+  if (!url) return `https://${region}.vultrobjects.com`;
+  return url.replace(/\/+$/, '');
+}
+
+const endpoint = normalizeEndpoint(process.env.VULTR_STORAGE_ENDPOINT);
+
+// Timeouts so uploads don't hang indefinitely (connection 10s, request 60s for larger files)
+const requestHandler = new NodeHttpHandler({
+  connectionTimeout: 10_000,
+  requestTimeout: 60_000,
+});
+
 const s3 = new S3Client({
   region,
-  endpoint: process.env.VULTR_STORAGE_ENDPOINT || `https://${region}.vultrobjects.com`,
+  endpoint,
+  requestHandler,
+  // Vultr recommends virtual-host style (bucket.ewr1.vultrobjects.com)
+  forcePathStyle: false,
   credentials: process.env.VULTR_STORAGE_ACCESS_KEY && process.env.VULTR_STORAGE_SECRET_KEY
     ? {
         accessKeyId: process.env.VULTR_STORAGE_ACCESS_KEY,
         secretAccessKey: process.env.VULTR_STORAGE_SECRET_KEY,
       }
     : undefined,
-  forcePathStyle: true,
 });
 
 /**
@@ -53,8 +71,9 @@ export async function uploadToVultr(fileBuffer, key, contentType = 'application/
     ContentType: contentType,
   });
   await s3.send(command);
-  const baseUrl = (process.env.VULTR_STORAGE_ENDPOINT || `https://${region}.vultrobjects.com`).replace(/^https?:\/\//, '');
-  const url = `https://${bucket}.${baseUrl}/${key}`;
+  // Build object URL: no trailing slash in host to avoid invalid URI
+  const baseHost = endpoint.replace(/^https?:\/\//, '');
+  const url = `https://${bucket}.${baseHost}/${key}`;
   return { url, key };
 }
 

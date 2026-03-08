@@ -8,7 +8,7 @@
 
 import express from 'express';
 import { runAgent, getAssistantId, createThread } from '../services/backboard.js';
-import { getClientThread, setClientThread, getClientById, isPswAssignedToClient } from '../db.js';
+import { getClientThread, setClientThread, getClientById, canPswAccessBriefingForClient } from '../db.js';
 
 const router = express.Router();
 
@@ -24,11 +24,11 @@ router.get('/:clientId', async (req, res) => {
     try {
         const { clientId } = req.params;
 
-        // PSWs must be assigned to the client for the current shift
+        // PSWs can access briefing from 30 min before shift start until shift end
         if (req.user.role === 'psw') {
-            const assigned = await isPswAssignedToClient(req.user.id, clientId);
-            if (!assigned) {
-                return res.status(403).json({ error: 'You are not assigned to this client for the current shift.' });
+            const canAccess = await canPswAccessBriefingForClient(req.user.id, clientId);
+            if (!canAccess) {
+                return res.status(403).json({ error: 'You cannot access this briefing.' });
             }
         }
 
