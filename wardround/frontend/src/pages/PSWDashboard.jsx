@@ -3,6 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useApi } from '../useApi';
 import BriefingCard from '../components/BriefingCard';
 import VisitLogger from '../components/VisitLogger';
+import DocumentUpload from '../components/DocumentUpload';
 
 const ROLES_CLAIM = 'https://wardround.app/roles';
 
@@ -135,6 +136,7 @@ export default function PSWDashboard() {
             {/* Main content */}
             <BriefingCard clientId={selectedId} />
             <VisitLogger clientId={selectedId} />
+            <DocumentUpload clientId={selectedId} />
         </div>
     );
 }
