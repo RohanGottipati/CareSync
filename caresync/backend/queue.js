@@ -22,7 +22,7 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
  * Queue for document processing: after a PDF is uploaded to Vultr, we add a job here.
  * The worker (workers/documentWorker.js) picks it up and e.g. uploads to Backboard for RAG.
  */
-export const documentQueue = new Queue('wardround:documents', {
+export const documentQueue = new Queue('caresync:documents', {
   redis: REDIS_URL,
   defaultJobOptions: {
     attempts: 3,

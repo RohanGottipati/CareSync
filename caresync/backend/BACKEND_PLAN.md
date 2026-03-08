@@ -17,9 +17,9 @@
 
 | Step | What was done |
 |------|----------------|
-| **Backend init** | Node/Express in `wardround/backend` with **express**, **cors**, **dotenv**, **bull**, **ioredis**, **@aws-sdk/client-s3**, **@aws-sdk/s3-request-presigner**, **express-oauth2-jwt-bearer**, **multer**, **node-cron**. |
+| **Backend init** | Node/Express in `caresync/backend` with **express**, **cors**, **dotenv**, **bull**, **ioredis**, **@aws-sdk/client-s3**, **@aws-sdk/s3-request-presigner**, **express-oauth2-jwt-bearer**, **multer**, **node-cron**. |
 | **Vultr storage** | `services/vultrStorage.js`: S3-compatible client for Vultr Object Storage — upload PDFs, get signed URLs, get/delete objects. |
-| **Queue** | `queue.js`: Bull queue `wardround:documents` backed by Redis for async document processing. |
+| **Queue** | `queue.js`: Bull queue `caresync:documents` backed by Redis for async document processing. |
 | **Backboard** | `services/backboard.js`: createThread, writeMemory, runAgent, uploadDoc; agent types handoff / sentinel / family. |
 | **Auth & roles** | `middleware/auth.js`: Auth0 JWT validation + `requireRole('psw'|'family'|'coordinator')` gating routes. |
 | **Cron** | `cron.js`: 2 AM America/Toronto Medication Sentinel (production only) via node-cron. |
@@ -79,7 +79,7 @@ See `.env.example`. Required for full operation:
 
 ```bash
 # Install dependencies
-cd wardround/backend && npm install
+cd caresync/backend && npm install
 
 # Redis must be running (e.g. redis-server or Docker)
 # Then:

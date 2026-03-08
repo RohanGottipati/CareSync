@@ -9,7 +9,7 @@
  *   - Document metadata entry for a physiotherapy care plan PDF
  *   - Several family daily summaries to show in the portal
  *
- * Run from the wardround/backend directory:
+ * Run from the caresync/backend directory:
  *   node scripts/seed-john-stone.js
  */
 
