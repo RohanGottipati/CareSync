@@ -16,25 +16,36 @@
 
 import Queue from 'bull';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL = process.env.REDIS_URL;
 
 /**
  * Queue for document processing: after a PDF is uploaded to Vultr, we add a job here.
  * The worker (workers/documentWorker.js) picks it up and e.g. uploads to Backboard for RAG.
+ * When REDIS_URL is not set the queue is disabled and uploads skip background processing.
  */
-export const documentQueue = new Queue('caresync:documents', {
-  redis: REDIS_URL,
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
-    removeOnComplete: 100,
-  },
-});
+let documentQueue = null;
+
+if (REDIS_URL) {
+  documentQueue = new Queue('caresync:documents', {
+    redis: REDIS_URL,
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+      removeOnComplete: 100,
+    },
+  });
+}
+
+export { documentQueue };
 
 /**
  * Add a document job (call after storing file in Vultr).
  * @param {{ key: string, clientId?: string, threadId?: string }} data - key = Vultr object key; optional client/thread for Backboard
  */
 export async function addDocumentJob(data) {
+  if (!documentQueue) {
+    console.warn('[queue] Redis not configured — skipping background document job.');
+    return null;
+  }
   return documentQueue.add(data);
 }

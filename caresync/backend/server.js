@@ -17,7 +17,20 @@ import adminRouter from './routes/admin.js';
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
+// CORS: allow configured origin(s); in development allow any localhost (Vite may use 5173, 5174, etc.)
+const allowedOrigins = [
+    ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()) : []),
+].filter(Boolean);
+const isDev = process.env.NODE_ENV !== 'production';
+const corsOptions = {
+    origin: (origin, cb) => {
+        if (!origin || allowedOrigins.length === 0) return cb(null, true);
+        if (allowedOrigins.includes(origin)) return cb(null, true);
+        if (isDev && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return cb(null, true);
+        cb(null, false);
+    },
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/api/briefings', authMiddleware, extractUser, requireRole('psw', 'coordinator'), briefingsRouter);
