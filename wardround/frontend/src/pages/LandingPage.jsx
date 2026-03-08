@@ -11,7 +11,6 @@ import {
     Globe,
     Zap,
     CheckCircle2,
-    ArrowDown,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Spline from '@splinetool/react-spline';
@@ -126,27 +125,27 @@ export default function LandingPage() {
                         <Spline scene="https://prod.spline.design/xdWX96OncUhXEm9L/scene.splinecode" />
                     </SplineErrorBoundary>
                 </div>
-
-                {/* Scroll indicator */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 2, duration: 1 }}
+                {/* Pill that hides "Built with Spline" badge (colour-matched to hero) */}
+                <div
                     style={{
-                        position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-                        zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                        position: 'absolute',
+                        right: 16,
+                        bottom: 16,
+                        zIndex: 1,
+                        paddingLeft: 14,
+                        paddingRight: 14,
+                        height: 44,
+                        borderRadius: 22,
+                        background: '#E0EBF5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                     }}
                 >
-                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        Scroll to explore
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#8B9AAF' }}>
+                        Built by Cool People
                     </span>
-                    <motion.div
-                        animate={{ y: [0, 6, 0] }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
-                    >
-                        <ArrowDown size={16} style={{ color: '#94a3b8' }} />
-                    </motion.div>
-                </motion.div>
+                </div>
             </section>
 
             {/* ─── STATS BAR ─── */}
@@ -264,6 +263,7 @@ export default function LandingPage() {
                                 </ul>
                                 <Link
                                     to={r.link}
+                                    onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
                                     className={`text-sm font-semibold ${r.color} hover:underline`}
                                 >
                                     Learn more →
@@ -376,7 +376,7 @@ export default function LandingPage() {
                     textAlign: 'center',
                     fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)',
                 }}>
-                    CareSync &copy; {new Date().getFullYear()} &middot; Built for Vultr Hackathon
+                    CareSync &copy; {new Date().getFullYear()}
                 </div>
             </section>
         </div>

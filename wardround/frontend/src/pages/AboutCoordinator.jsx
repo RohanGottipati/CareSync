@@ -106,42 +106,6 @@ export default function AboutCoordinator() {
             instant escalation across your entire roster.
           </motion.p>
 
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-            custom={3}
-            className="flex flex-wrap gap-3 justify-center"
-          >
-            <button
-              onClick={() => navigate("/coordinator")}
-              className="inline-flex items-center gap-2 bg-white hover:bg-indigo-50 text-indigo-700 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200"
-            >
-              Open Admin Suite <ArrowRight size={16} />
-            </button>
-            <button className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200">
-              Learn More <ChevronRight size={16} />
-            </button>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ─── STATS ─── */}
-      <section className="border-b border-gray-100 bg-gray-50 py-14 px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((s, i) => (
-            <motion.div
-              key={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={i}
-            >
-              <div className="text-3xl font-bold text-indigo-600 mb-1">{s.value}</div>
-              <div className="text-sm text-gray-500">{s.label}</div>
-            </motion.div>
-          ))}
         </div>
       </section>
 
@@ -206,17 +170,11 @@ export default function AboutCoordinator() {
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight mb-4">
               Your daily operations, codified
             </h2>
-            <p className="text-gray-500 leading-relaxed mb-6">
+            <p className="text-gray-500 leading-relaxed">
               A structured daily protocol that ensures no client ever falls
               through the cracks — from morning audit to end-of-day compliance
               check.
             </p>
-            <button
-              onClick={() => navigate("/coordinator")}
-              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200"
-            >
-              Open Admin Suite <ArrowRight size={16} />
-            </button>
           </motion.div>
 
           <div className="space-y-3">
@@ -254,16 +212,10 @@ export default function AboutCoordinator() {
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
             Run your service with complete confidence
           </h2>
-          <p className="text-indigo-100 mb-7 text-base">
+          <p className="text-indigo-100 text-base">
             CareSync gives coordinators the visibility and control they need to
             deliver exceptional care at scale.
           </p>
-          <button
-            onClick={() => navigate("/coordinator")}
-            className="inline-flex items-center gap-2 bg-white hover:bg-indigo-50 text-indigo-700 font-semibold text-sm px-6 py-3 rounded-lg transition-colors duration-200"
-          >
-            Access Admin Suite <ArrowRight size={16} />
-          </button>
         </motion.div>
       </section>
     </div>

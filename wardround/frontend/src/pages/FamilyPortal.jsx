@@ -87,13 +87,6 @@ export default function FamilyPortal() {
 
     /* ── styles ─── */
     const page = { maxWidth: '820px', margin: '0 auto' };
-    const roleChip = {
-        display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-        padding: '0.2rem 0.7rem', borderRadius: '9999px',
-        background: '#faf5ff', color: '#7c3aed',
-        fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-        border: '1px solid #ede9fe',
-    };
     const infoBox = {
         marginBottom: '1.5rem', padding: '1rem 1.25rem',
         borderRadius: '12px', background: '#faf5ff',
@@ -135,11 +128,10 @@ export default function FamilyPortal() {
         <div style={page}>
             {/* Header */}
             <div style={{ marginBottom: '1.75rem', paddingBottom: '1.25rem', borderBottom: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
+                <div style={{ marginBottom: '0.25rem' }}>
                     <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: '#0f172a' }}>
                         Family Portal
                     </h1>
-                    <span style={roleChip}>Family</span>
                 </div>
                 <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
                     Daily care updates, prepared each night by the CareSync Care Team.

@@ -1,18 +1,37 @@
 import React, { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import { cn } from "../lib/utils"
 
+/** Return the nav item name whose URL best matches the current pathname. */
+function getActiveFromPath(pathname, items) {
+  // Exact match first
+  const exact = items.find(item => item.url && item.url === pathname)
+  if (exact) return exact.name
+  // Prefix match (longest wins), excluding '/' to avoid it matching everything
+  const prefix = items
+    .filter(item => item.url && item.url !== '/' && pathname.startsWith(item.url))
+    .sort((a, b) => b.url.length - a.url.length)[0]
+  if (prefix) return prefix.name
+  // Fall back to the first item with url '/' if on root
+  if (pathname === '/') {
+    const home = items.find(item => item.url === '/')
+    if (home) return home.name
+  }
+  return items[0]?.name
+}
+
 export function NavBar({ items, className }) {
-  const [activeTab, setActiveTab] = useState(items[0]?.name)
-  const [isMobile, setIsMobile] = useState(false)
+  const location = useLocation()
+  const [activeTab, setActiveTab] = useState(() => getActiveFromPath(location.pathname, items))
+
+  // Keep active tab in sync with the URL whenever it changes (back/forward, programmatic nav, etc.)
+  useEffect(() => {
+    setActiveTab(getActiveFromPath(location.pathname, items))
+  }, [location.pathname, items])
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    handleResize()
+    const handleResize = () => {}
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
@@ -84,7 +103,6 @@ export function NavBar({ items, className }) {
             <Link
               key={item.name}
               to={item.url}
-              onClick={() => setActiveTab(item.name)}
               className={commonClasses}
             >
               {buttonContent}

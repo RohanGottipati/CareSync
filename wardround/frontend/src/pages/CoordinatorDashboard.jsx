@@ -826,16 +826,10 @@ export default function CoordinatorDashboard() {
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             {/* Header */}
             <div style={{ marginBottom: '1.75rem', paddingBottom: '1.25rem', borderBottom: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
+                <div style={{ marginBottom: '0.25rem' }}>
                     <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: '#0f172a' }}>
                         Coordinator Dashboard
                     </h1>
-                    <span style={{
-                        display: 'inline-flex', padding: '0.2rem 0.7rem', borderRadius: '9999px',
-                        background: '#f0fdf4', border: '1px solid #bbf7d0',
-                        color: '#15803d', fontSize: '0.72rem', fontWeight: 700,
-                        textTransform: 'uppercase', letterSpacing: '0.06em',
-                    }}>Coordinator</span>
                 </div>
                 <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
                     Manage clients, schedule assignments, and review overnight sentinel reports.

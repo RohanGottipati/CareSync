@@ -49,12 +49,6 @@ export default function PSWDashboard() {
         paddingBottom: '1.25rem',
         borderBottom: '1px solid #e2e8f0',
     };
-    const roleChip = {
-        display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-        padding: '0.2rem 0.7rem', borderRadius: '9999px',
-        background: '#dbeafe', color: '#1d4ed8',
-        fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-    };
     const selectorLabel = {
         fontSize: '0.8rem', fontWeight: 600, color: '#64748b',
         display: 'block', marginBottom: '0.4rem',
@@ -71,11 +65,10 @@ export default function PSWDashboard() {
         <div style={page}>
             {/* Page header */}
             <div style={header}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
+                <div style={{ marginBottom: '0.25rem' }}>
                     <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: '#0f172a' }}>
                         Good {hour()}, {firstName}
                     </h1>
-                    <span style={roleChip}>PSW</span>
                 </div>
                 <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
                     Select a client to load their pre-visit briefing and log today's visit.

@@ -106,42 +106,6 @@ export default function AboutPSW() {
             in prepared, never blind.
           </motion.p>
 
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-            custom={3}
-            className="flex flex-wrap gap-3 justify-center"
-          >
-            <button
-              onClick={() => navigate("/")}
-              className="inline-flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200"
-            >
-              Go to Dashboard <ArrowRight size={16} />
-            </button>
-            <button className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200">
-              Learn More <ChevronRight size={16} />
-            </button>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ─── STATS ─── */}
-      <section className="border-b border-gray-100 bg-gray-50 py-14 px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((s, i) => (
-            <motion.div
-              key={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={i}
-            >
-              <div className="text-3xl font-bold text-blue-600 mb-1">{s.value}</div>
-              <div className="text-sm text-gray-500">{s.label}</div>
-            </motion.div>
-          ))}
         </div>
       </section>
 
@@ -206,16 +170,10 @@ export default function AboutPSW() {
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight mb-4">
               Your shift, from start to finish
             </h2>
-            <p className="text-gray-500 leading-relaxed mb-6">
+            <p className="text-gray-500 leading-relaxed">
               A streamlined four-step flow that makes every visit consistent,
               documented, and connected — so nothing slips through the cracks.
             </p>
-            <button
-              onClick={() => navigate("/")}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200"
-            >
-              Open Dashboard <ArrowRight size={16} />
-            </button>
           </motion.div>
 
           <div className="space-y-3">
@@ -253,15 +211,9 @@ export default function AboutPSW() {
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
             Ready to transform your care workflow?
           </h2>
-          <p className="text-blue-100 mb-7 text-base">
+          <p className="text-blue-100 text-base">
             Join hundreds of PSWs who deliver better outcomes with CareSync.
           </p>
-          <button
-            onClick={() => navigate("/")}
-            className="inline-flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700 font-semibold text-sm px-6 py-3 rounded-lg transition-colors duration-200"
-          >
-            Get Started Today <ArrowRight size={16} />
-          </button>
         </motion.div>
       </section>
     </div>
