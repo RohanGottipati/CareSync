@@ -1,4 +1,29 @@
+import React from 'react';
 import Spline from '@splinetool/react-spline';
+
+/** Catches Spline load errors (e.g. Invalid URI / media resource failed) so the page still renders. */
+class SplineErrorBoundary extends React.Component {
+    state = { hasError: false };
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 0,
+                    background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)',
+                }} />
+            );
+        }
+        return this.props.children;
+    }
+}
 
 export default function LandingPage() {
     return (
@@ -18,7 +43,9 @@ export default function LandingPage() {
                 height: '100%',
                 zIndex: 0,
             }}>
-                <Spline scene="https://prod.spline.design/xdWX96OncUhXEm9L/scene.splinecode" />
+                <SplineErrorBoundary>
+                    <Spline scene="https://prod.spline.design/xdWX96OncUhXEm9L/scene.splinecode" />
+                </SplineErrorBoundary>
             </div>
 
             {/* Foreground Content */}

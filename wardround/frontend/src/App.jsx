@@ -44,7 +44,7 @@ function AppContent() {
                 <h2>Authentication Error</h2>
                 <p style={{ color: '#ef4444' }}>{error.message}</p>
                 <button
-                    onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                    onClick={() => logout({ logoutParams: { returnTo: typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'http://localhost:5173' } })}
                     style={{
                         marginTop: '1rem',
                         padding: '0.5rem 1.5rem',
@@ -106,7 +106,7 @@ function AppContent() {
     }
 
     return (
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             {/* User Info & Logout Button - Fixed Top Right (Only show if authenticated and has role) */}
             {isAuthenticated && role && (
                 <div style={{
@@ -128,7 +128,7 @@ function AppContent() {
                         {user?.name || user?.email} ({role})
                     </span>
                     <button
-                        onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                        onClick={() => logout({ logoutParams: { returnTo: typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'http://localhost:5173' } })}
                         style={{
                             padding: '0.4rem 1rem',
                             background: 'white',
@@ -166,9 +166,33 @@ function AppContent() {
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 ) : !role ? (
-                    <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-                        <h2>No Role Assigned</h2>
-                        <p>Your account does not have a role assigned. Please contact your administrator.</p>
+                    <div style={{
+                        padding: '4rem 2rem',
+                        textAlign: 'center',
+                        maxWidth: '420px',
+                        margin: '0 auto',
+                    }}>
+                        <h2 style={{ marginBottom: '0.5rem', fontSize: '1.5rem', color: 'var(--text-main)' }}>
+                            No Role Assigned
+                        </h2>
+                        <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+                            Your account does not have a role assigned. Please contact your administrator.
+                        </p>
+                        <button
+                            onClick={() => logout({ logoutParams: { returnTo: typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'http://localhost:5173' } })}
+                            style={{
+                                padding: '0.6rem 1.5rem',
+                                background: '#0f172a',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem',
+                                fontWeight: 500,
+                            }}
+                        >
+                            Log out
+                        </button>
                     </div>
                 ) : (
                     <Routes>

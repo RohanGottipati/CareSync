@@ -4,8 +4,13 @@ dotenv.config();
 
 const ROLES_CLAIM = 'https://wardround.app/roles';
 
+// Accept both with and without trailing slash so tokens from Auth0 match regardless of format
+const rawAudience = process.env.AUTH0_AUDIENCE;
+const baseAudience = (rawAudience || '').replace(/\/$/, '');
+const audienceList = baseAudience ? [baseAudience, `${baseAudience}/`] : [];
+
 export const authMiddleware = auth({
-    audience: process.env.AUTH0_AUDIENCE,
+    audience: audienceList.length ? audienceList : rawAudience,
     issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}`,
     tokenSigningAlg: 'RS256',
 });
