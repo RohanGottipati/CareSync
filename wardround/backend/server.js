@@ -12,6 +12,7 @@ import familyRouter from './routes/family.js';
 import documentsRouter from './routes/documents.js';
 import clientsRouter from './routes/clients.js';
 import debugRouter from './routes/debug.js';
+import adminRouter from './routes/admin.js';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use('/api/visits', authMiddleware, extractUser, requireRole('psw', 'coordina
 app.use('/api/family', authMiddleware, extractUser, requireRole('psw', 'family', 'coordinator'), familyRouter);
 app.use('/api/documents', authMiddleware, extractUser, requireRole('psw', 'family', 'coordinator'), documentsRouter);
 app.use('/api/clients', authMiddleware, extractUser, clientsRouter);
+app.use('/api/admin', authMiddleware, extractUser, requireRole('coordinator'), adminRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
