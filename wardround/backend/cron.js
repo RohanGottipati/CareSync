@@ -173,12 +173,13 @@ export async function runFamilySummaries() {
                 });
 
                 const prompt = [
-                    `Write a brief, warm, family-friendly daily update for ${client.name}'s family.`,
-                    'Base it only on the visit notes below. Do not include clinical jargon or raw PSW identifiers.',
-                    'Focus on the client\'s wellbeing, mood, and any noteworthy moments from the day.',
-                    'Keep it under 120 words. Sign off as "The WardRound Care Team".',
+                    `Write a brief, warm, family-friendly daily care update ONLY for ${client.name}.`,
+                    `This update is exclusively about ${client.name}. Do NOT mention, reference, or name any other client or patient.`,
+                    'Base it only on the visit notes listed below. Do not include clinical jargon or raw PSW identifiers.',
+                    `Focus solely on ${client.name}'s wellbeing, mood, and any noteworthy moments from the day.`,
+                    'Keep it under 120 words. Sign off as "The CareSync Care Team".',
                     '',
-                    `Today's visit notes for ${client.name}:`,
+                    `Today\'s visit notes for ${client.name} (do not reference any other person):`,
                     ...visitLines,
                 ].join('\n');
 

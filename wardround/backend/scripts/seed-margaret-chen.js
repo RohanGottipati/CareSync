@@ -118,23 +118,23 @@ const VISIT_TEMPLATES = [
 const FAMILY_SUMMARIES = [
     {
         daysAgo: 1,
-        text: `Dear Linda and David,\n\nWe are pleased to share that Margaret had a settled and comfortable day yesterday. She enjoyed her meals, and her morning walk to the balcony to feed the birds brought her great joy. Her vitals were stable throughout the day, and her evening routine went smoothly with only mild agitation, which was quickly resolved with her favourite music.\n\nThank you for your continued trust in our care.\n\nWarm regards,\nThe WardRound Care Team`,
+        text: `Dear Linda and David,\n\nWe are pleased to share that Margaret had a settled and comfortable day yesterday. She enjoyed her meals, and her morning walk to the balcony to feed the birds brought her great joy. Her vitals were stable throughout the day, and her evening routine went smoothly with only mild agitation, which was quickly resolved with her favourite music.\n\nThank you for your continued trust in our care.\n\nWarm regards,\nThe CareSync Care Team`,
     },
     {
         daysAgo: 2,
-        text: `Dear Linda and David,\n\nYesterday was a positive day for Margaret. She was alert and in good spirits during both morning and afternoon visits. Her blood glucose was within target range, and her blood pressure readings were reassuring. She spoke warmly about family and enjoyed a full dinner.\n\nWe remain attentive to her comfort and wellbeing.\n\nWarm regards,\nThe WardRound Care Team`,
+        text: `Dear Linda and David,\n\nYesterday was a positive day for Margaret. She was alert and in good spirits during both morning and afternoon visits. Her blood glucose was within target range, and her blood pressure readings were reassuring. She spoke warmly about family and enjoyed a full dinner.\n\nWe remain attentive to her comfort and wellbeing.\n\nWarm regards,\nThe CareSync Care Team`,
     },
     {
         daysAgo: 3,
-        text: `Dear Linda and David,\n\nWe wanted to update you that Margaret had a slightly fatigued morning but improved significantly through the afternoon. She participated in a short social outing to the common room and interacted warmly with her neighbour. Her appetite was good and all medications were administered as scheduled.\n\nPlease don't hesitate to reach out with any questions.\n\nWarm regards,\nThe WardRound Care Team`,
+        text: `Dear Linda and David,\n\nWe wanted to update you that Margaret had a slightly fatigued morning but improved significantly through the afternoon. She participated in a short social outing to the common room and interacted warmly with her neighbour. Her appetite was good and all medications were administered as scheduled.\n\nPlease don't hesitate to reach out with any questions.\n\nWarm regards,\nThe CareSync Care Team`,
     },
     {
         daysAgo: 5,
-        text: `Dear Linda and David,\n\nMargaret's day was broadly positive, though we did observe a brief period of afternoon confusion. She was gently re-oriented and quickly settled with familiar music. There were no falls or safety incidents. We have noted this pattern for the care team's review.\n\nThank you for your partnership in her care.\n\nWarm regards,\nThe WardRound Care Team`,
+        text: `Dear Linda and David,\n\nMargaret's day was broadly positive, though we did observe a brief period of afternoon confusion. She was gently re-oriented and quickly settled with familiar music. There were no falls or safety incidents. We have noted this pattern for the care team's review.\n\nThank you for your partnership in her care.\n\nWarm regards,\nThe CareSync Care Team`,
     },
     {
         daysAgo: 7,
-        text: `Dear Linda and David,\n\nWe are pleased to report that the day following Linda's visit, Margaret was in excellent spirits. She spoke fondly of the visit and her engagement and appetite were notably improved. All medications were administered as planned and her blood pressure was particularly good.\n\nThank you both for your warm visits — they mean so much to her.\n\nWarm regards,\nThe WardRound Care Team`,
+        text: `Dear Linda and David,\n\nWe are pleased to report that the day following your visit, Margaret was in excellent spirits. She spoke fondly of the visit and her engagement and appetite were notably improved. All medications were administered as planned and her blood pressure was particularly good.\n\nThank you both for your warm visits — they mean so much to her.\n\nWarm regards,\nThe CareSync Care Team`,
     },
 ];
 

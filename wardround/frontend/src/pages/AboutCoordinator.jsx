@@ -101,7 +101,7 @@ export default function AboutCoordinator() {
             custom={2}
             className="text-blue-100 text-lg leading-relaxed mb-8 max-w-xl mx-auto"
           >
-            WardRound gives coordinators a unified command layer — real-time
+            CareSync gives coordinators a unified command layer — real-time
             clinical visibility, zero-risk oversight, automated compliance, and
             instant escalation across your entire roster.
           </motion.p>
@@ -255,7 +255,7 @@ export default function AboutCoordinator() {
             Run your service with complete confidence
           </h2>
           <p className="text-indigo-100 mb-7 text-base">
-            WardRound gives coordinators the visibility and control they need to
+            CareSync gives coordinators the visibility and control they need to
             deliver exceptional care at scale.
           </p>
           <button

@@ -1,4 +1,4 @@
-# WardRound Backend — Plan & Architecture
+# CareSync Backend — Plan & Architecture
 
 ## 1. Audit: How the frontend talks to the backend
 

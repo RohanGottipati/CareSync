@@ -122,6 +122,7 @@ function ClientsTab() {
     const [showAdd, setShowAdd] = useState(false);
     const [editId, setEditId] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [removingId, setRemovingId] = useState(null);
     const [error, setError] = useState('');
 
     const reload = useCallback(() => {
@@ -150,6 +151,15 @@ function ClientsTab() {
             setEditId(null);
             reload();
         } catch (e) { setError(e.message); } finally { setSaving(false); }
+    };
+
+    const removeClient = async (id, name) => {
+        if (!window.confirm(`Remove ${name}? This cannot be undone.`)) return;
+        setRemovingId(id);
+        try {
+            await fetchWithAuth(`/clients/${id}`, { method: 'DELETE' });
+            reload();
+        } catch (e) { setError(e.message); } finally { setRemovingId(null); }
     };
 
     return (
@@ -214,9 +224,23 @@ function ClientsTab() {
                                             {c.date_of_birth ? new Date(c.date_of_birth).toLocaleDateString('en-CA') : '—'}
                                         </td>
                                         <td style={{ ...td, textAlign: 'right' }}>
-                                            <button style={btnGhost} onClick={() => setEditId(c.id === editId ? null : c.id)}>
-                                                {c.id === editId ? 'Cancel' : 'Edit'}
-                                            </button>
+                                            <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                                                <button
+                                                    type="button"
+                                                    style={btnGhost}
+                                                    onClick={() => setEditId(c.id === editId ? null : c.id)}
+                                                >
+                                                    <span style={{ pointerEvents: 'none' }}>{c.id === editId ? 'Cancel' : 'Edit'}</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    style={{ ...btnDanger, opacity: removingId === c.id ? 0.6 : 1 }}
+                                                    onClick={() => removeClient(c.id, c.name)}
+                                                    disabled={removingId === c.id}
+                                                >
+                                                    <span style={{ pointerEvents: 'none' }}>{removingId === c.id ? 'Removing…' : 'Remove'}</span>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                     {editId === c.id && (
@@ -615,8 +639,11 @@ export default function CoordinatorDashboard() {
     const [activeTab, setActiveTab] = useState('clients');
 
     const tabBar = {
-        display: 'flex', gap: '0.25rem', marginBottom: '1.5rem',
+        display: 'flex', gap: '0', marginBottom: '1.5rem',
         borderBottom: '2px solid #f1f5f9', paddingBottom: '0',
+        overflowX: 'auto', WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
+        position: 'relative', zIndex: 10,
     };
     const tabBtn = (id) => ({
         padding: '0.55rem 1.1rem', border: 'none', background: 'none',
@@ -625,7 +652,7 @@ export default function CoordinatorDashboard() {
         borderBottom: `2px solid ${activeTab === id ? '#2563eb' : 'transparent'}`,
         marginBottom: '-2px', transition: 'color 0.15s',
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-        minHeight: '38px',
+        minHeight: '44px', minWidth: '100px', whiteSpace: 'nowrap', flexShrink: 0,
     });
 
     return (

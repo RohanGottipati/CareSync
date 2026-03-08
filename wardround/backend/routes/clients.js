@@ -5,6 +5,7 @@
  *   GET    /api/clients                    — list all clients
  *   POST   /api/clients                    — create a client + seed Backboard thread
  *   PUT    /api/clients/:id                — update a client
+ *   DELETE /api/clients/:id                — remove a client
  *   GET    /api/clients/assignments/all    — list all assignments
  *   POST   /api/clients/assignments        — assign a PSW to a client for a shift
  *   DELETE /api/clients/assignments/:id    — remove an assignment
@@ -19,6 +20,7 @@ import {
     getClientById,
     createClient,
     updateClient,
+    deleteClient,
     setClientThread,
     createAssignment,
     getAllAssignments,
@@ -127,6 +129,17 @@ router.put('/:id', requireRole('coordinator'), async (req, res) => {
         res.json({ client });
     } catch (err) {
         console.error('PUT /clients/:id error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Coordinator: delete client ────────────────────────────────────────────────
+router.delete('/:id', requireRole('coordinator'), async (req, res) => {
+    try {
+        await deleteClient(req.params.id);
+        res.json({ message: 'Client removed' });
+    } catch (err) {
+        console.error('DELETE /clients/:id error:', err);
         res.status(500).json({ error: err.message });
     }
 });

@@ -53,7 +53,7 @@ export default function LoginPage() {
                 alignItems: 'center',
             }}>
                 <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', fontWeight: 700, color: '#0f172a' }}>
-                    Welcome to WardRound
+                    Welcome to CareSync
                 </h1>
                 <p style={{ fontSize: '1rem', color: '#64748b', marginBottom: '2.5rem' }}>
                     Sign in to access your portal

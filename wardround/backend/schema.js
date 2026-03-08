@@ -1,6 +1,6 @@
 /**
  * Database schema initializer.
- * Creates all WardRound tables if they don't exist.
+ * Creates all CareSync tables if they don't exist.
  * Called once on server boot from server.js.
  *
  * Tables:

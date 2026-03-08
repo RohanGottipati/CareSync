@@ -1,11 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useApi } from '../useApi';
+import DocumentUpload from '../components/DocumentUpload';
+
+/** Parse a YYYY-MM-DD date string as a local date (avoids UTC → day-behind shift). */
+function parseLocalDate(dateStr) {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+}
+
+function formatSummaryDate(dateStr) {
+    const d = parseLocalDate(dateStr);
+    if (!d) return dateStr;
+    return d.toLocaleDateString('en-CA', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+}
 
 export default function FamilyPortal() {
     const { user } = useAuth0();
     const { fetchWithAuth } = useApi();
-    const firstName = user?.name?.split(' ')[0] || 'there';
 
     const [clients, setClients] = useState([]);
     const [selectedId, setSelectedId] = useState('');
@@ -15,6 +30,10 @@ export default function FamilyPortal() {
     const [summaries, setSummaries] = useState([]);
     const [loadingSummaries, setLoadingSummaries] = useState(false);
     const [summariesError, setSummariesError] = useState('');
+
+    const [docs, setDocs] = useState([]);
+    const [loadingDocs, setLoadingDocs] = useState(false);
+    const [showUpload, setShowUpload] = useState(false);
 
     useEffect(() => {
         fetchWithAuth('/clients')
@@ -41,9 +60,30 @@ export default function FamilyPortal() {
         }
     }, [fetchWithAuth]);
 
-    useEffect(() => { loadSummaries(selectedId); }, [selectedId, loadSummaries]);
+    const loadDocs = useCallback(async (clientId) => {
+        if (!clientId) { setDocs([]); return; }
+        setLoadingDocs(true);
+        try {
+            const data = await fetchWithAuth(`/documents?clientId=${clientId}`);
+            setDocs(data.documents || []);
+        } catch {
+            setDocs([]);
+        } finally {
+            setLoadingDocs(false);
+        }
+    }, [fetchWithAuth]);
+
+    useEffect(() => {
+        loadSummaries(selectedId);
+        loadDocs(selectedId);
+        setShowUpload(false);
+    }, [selectedId, loadSummaries, loadDocs]);
 
     const selectedClient = clients.find(c => c.id === selectedId);
+
+    const fmtUploadDate = (d) => d
+        ? new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '—';
 
     /* ── styles ─── */
     const page = { maxWidth: '820px', margin: '0 auto' };
@@ -82,6 +122,14 @@ export default function FamilyPortal() {
         padding: '2.5rem', textAlign: 'center',
         background: '#f8fafc', borderRadius: '12px', border: '1px dashed #e2e8f0',
     };
+    const btnSecondary = {
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+        padding: '0.4rem 0.85rem', minHeight: '34px',
+        fontSize: '0.78rem', fontWeight: 600,
+        border: '1px solid #e2e8f0', borderRadius: '8px',
+        background: 'white', color: '#7c3aed',
+        cursor: 'pointer',
+    };
 
     return (
         <div style={page}>
@@ -94,15 +142,16 @@ export default function FamilyPortal() {
                     <span style={roleChip}>Family</span>
                 </div>
                 <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-                    Daily care updates, prepared each night by the WardRound Care Team.
+                    Daily care updates, prepared each night by the CareSync Care Team.
                 </p>
             </div>
 
             {/* Info callout */}
             <div style={infoBox}>
-                <strong>How it works:</strong> Every night, the WardRound Care Team reviews your loved one's
+                <strong>How it works:</strong> Every night, the CareSync Care Team reviews your loved one's
                 daily care logs and prepares a personalised update for you here. Updates appear each morning
-                for the previous day's care.
+                for the previous day's care. You can also upload documents (care preferences, advance directives)
+                for your loved one's care team.
             </div>
 
             {/* Client selector */}
@@ -144,7 +193,7 @@ export default function FamilyPortal() {
                 </div>
             )}
 
-            {/* Summaries */}
+            {/* Daily summaries */}
             {selectedId && (
                 <div style={card}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -154,7 +203,7 @@ export default function FamilyPortal() {
                                 background: 'linear-gradient(135deg,#8b5cf6 0%,#a78bfa 100%)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ pointerEvents: 'none' }}>
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                     <polyline points="14 2 14 8 20 8" />
                                     <line x1="16" y1="13" x2="8" y2="13" />
@@ -167,7 +216,7 @@ export default function FamilyPortal() {
                                     Daily Updates
                                     {selectedClient && <span style={{ color: '#64748b', fontWeight: 500 }}> — {selectedClient.name}</span>}
                                 </div>
-                                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Prepared nightly by the Care Team</div>
+                                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Prepared nightly by the CareSync Care Team</div>
                             </div>
                         </div>
                         <button
@@ -175,11 +224,7 @@ export default function FamilyPortal() {
                             onClick={() => loadSummaries(selectedId)}
                             disabled={loadingSummaries}
                             style={{
-                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-                                padding: '0.4rem 0.85rem', minHeight: '34px',
-                                fontSize: '0.78rem', fontWeight: 600,
-                                border: '1px solid #e2e8f0', borderRadius: '8px',
-                                background: 'white', color: '#7c3aed',
+                                ...btnSecondary,
                                 cursor: loadingSummaries ? 'not-allowed' : 'pointer',
                                 opacity: loadingSummaries ? 0.6 : 1,
                             }}
@@ -231,9 +276,11 @@ export default function FamilyPortal() {
                     {!loadingSummaries && summaries.length > 0 && (
                         <div>
                             {summaries.map((s, i) => {
-                                const dateLabel = new Date(s.summary_date + 'T12:00:00').toLocaleDateString('en-CA', {
-                                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-                                });
+                                const dateLabel = formatSummaryDate(
+                                    typeof s.summary_date === 'string'
+                                        ? s.summary_date.slice(0, 10)
+                                        : s.summary_date
+                                );
                                 return (
                                     <div key={s.id || i} style={summaryCard(i)}>
                                         {i === 0 && (
@@ -263,6 +310,91 @@ export default function FamilyPortal() {
                                     </div>
                                 );
                             })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Documents section */}
+            {selectedId && (
+                <div style={card}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <div style={{
+                                width: 34, height: 34, borderRadius: '10px', flexShrink: 0,
+                                background: 'linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ pointerEvents: 'none' }}>
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>
+                                    Documents
+                                    {selectedClient && <span style={{ color: '#64748b', fontWeight: 500 }}> — {selectedClient.name}</span>}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Care preferences, advance directives, etc.</div>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowUpload(v => !v)}
+                            style={{ ...btnSecondary, color: '#0ea5e9', borderColor: '#bae6fd' }}
+                        >
+                            <span style={{ pointerEvents: 'none' }}>{showUpload ? '✕ Cancel' : '+ Upload'}</span>
+                        </button>
+                    </div>
+
+                    {/* Upload widget */}
+                    {showUpload && (
+                        <div style={{ marginBottom: '1.25rem' }}>
+                            <DocumentUpload
+                                clientId={selectedId}
+                                onUploadSuccess={() => {
+                                    setShowUpload(false);
+                                    loadDocs(selectedId);
+                                }}
+                            />
+                        </div>
+                    )}
+
+                    {/* Document list */}
+                    {loadingDocs && (
+                        <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: 0 }}>Loading…</p>
+                    )}
+                    {!loadingDocs && docs.length === 0 && !showUpload && (
+                        <div style={{ ...emptyBox, padding: '1.5rem' }}>
+                            <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                                No documents uploaded yet. Click <strong>+ Upload</strong> to share care preferences or advance directives.
+                            </p>
+                        </div>
+                    )}
+                    {!loadingDocs && docs.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {docs.map(d => (
+                                <div key={d.id} style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    padding: '0.65rem 0.85rem', borderRadius: '10px',
+                                    background: '#f8fafc', border: '1px solid #e2e8f0',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                                        <span style={{ fontSize: '1rem', flexShrink: 0 }}>📄</span>
+                                        {d.storage_url
+                                            ? <a href={d.storage_url} target="_blank" rel="noopener noreferrer"
+                                                style={{ color: '#2563eb', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {d.filename}
+                                            </a>
+                                            : <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#0f172a' }}>{d.filename}</span>
+                                        }
+                                    </div>
+                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8', flexShrink: 0, marginLeft: '0.75rem' }}>
+                                        {fmtUploadDate(d.uploaded_at)}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

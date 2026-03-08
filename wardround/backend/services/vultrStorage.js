@@ -1,5 +1,5 @@
 /**
- * Vultr Object Storage (S3-compatible) service for WardRound document storage.
+ * Vultr Object Storage (S3-compatible) service for CareSync document storage.
  *
  * WHY VULTR OBJECT STORAGE:
  * - S3-compatible API: use standard AWS SDK, no lock-in; same code works with AWS if needed.

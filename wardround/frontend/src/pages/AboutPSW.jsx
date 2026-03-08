@@ -32,7 +32,7 @@ const features = [
     icon: <ClipboardList size={20} className="text-blue-600" />,
     bg: "bg-blue-50",
     title: "The Handoff Agent",
-    desc: "WardRound generates specific briefings before every visit — summarising medications, mood changes, and family notes so you walk in fully prepared.",
+    desc: "CareSync generates specific briefings before every visit — summarising medications, mood changes, and family notes so you walk in fully prepared.",
   },
   {
     icon: <ShieldAlert size={20} className="text-red-600" />,
@@ -101,7 +101,7 @@ export default function AboutPSW() {
             custom={2}
             className="text-blue-100 text-lg leading-relaxed mb-8 max-w-xl mx-auto"
           >
-            WardRound arms every PSW with AI-generated briefings, real-time
+            CareSync arms every PSW with AI-generated briefings, real-time
             medication monitoring, and adaptive care memory — so you always walk
             in prepared, never blind.
           </motion.p>
@@ -254,7 +254,7 @@ export default function AboutPSW() {
             Ready to transform your care workflow?
           </h2>
           <p className="text-blue-100 mb-7 text-base">
-            Join hundreds of PSWs who deliver better outcomes with WardRound.
+            Join hundreds of PSWs who deliver better outcomes with CareSync.
           </p>
           <button
             onClick={() => navigate("/")}

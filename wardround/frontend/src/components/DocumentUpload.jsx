@@ -131,7 +131,7 @@ export default function DocumentUpload({ clientId, onUploadSuccess }) {
                     minHeight: '44px',
                 }}
             >
-                {status === 'uploading' ? 'Uploading…' : 'Upload to WardRound'}
+                {status === 'uploading' ? 'Uploading…' : 'Upload to CareSync'}
             </button>
 
             {/* Status messages */}

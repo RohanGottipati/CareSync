@@ -34,25 +34,28 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     if (!isAllowedUpload(req.file)) {
       return res.status(400).json({ error: 'Only PDF, JPG, JPEG, PNG, and DOCX files are allowed.' });
     }
-    const clientId = req.body?.clientId || req.user?.id || 'unknown';
+    // clientId must come from the request body for patient-specific uploads.
+    // For family/coordinator roles this is required; PSW uploads are now removed from the UI.
+    const clientId = req.body?.clientId || null;
+    if (!clientId) {
+      return res.status(400).json({ error: 'clientId is required to associate the document with a patient.' });
+    }
     const threadId = req.body?.threadId || null;
     const key = `clients/${clientId}/${Date.now()}-${req.file.originalname || 'file.pdf'}`;
     const contentType = req.file.mimetype || 'application/pdf';
     const { url, key: storedKey } = await uploadToVultr(req.file.buffer, key, contentType);
 
     // Save document metadata to DB (non-fatal)
-    if (clientId !== 'unknown') {
-      try {
-        await insertDocument({
-          clientId,
-          filename: req.file.originalname || 'file.pdf',
-          storageKey: storedKey,
-          storageUrl: url,
-          uploadedBy: req.user?.id || null,
-        });
-      } catch (dbErr) {
-        console.warn('[documents] Could not save metadata (non-fatal):', dbErr.message);
-      }
+    try {
+      await insertDocument({
+        clientId,
+        filename: req.file.originalname || 'file.pdf',
+        storageKey: storedKey,
+        storageUrl: url,
+        uploadedBy: req.user?.id || null,
+      });
+    } catch (dbErr) {
+      console.warn('[documents] Could not save metadata (non-fatal):', dbErr.message);
     }
 
     // Queue job for background processing (Backboard RAG). Fire-and-forget so we don't block the response.

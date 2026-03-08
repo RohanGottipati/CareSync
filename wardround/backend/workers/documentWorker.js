@@ -1,5 +1,7 @@
 /**
  * Bull worker: after a document is stored in Vultr, download it and push to Backboard for RAG.
+ * Uploads the document to both the client's handoff thread (briefing agent) and their family
+ * thread (family update agent) so both agents have patient-specific document context.
  * This keeps the upload API fast and lets Backboard index PDFs in the background (24/7 on the VPS).
  */
 
@@ -14,18 +16,37 @@ documentQueue.process(async (job) => {
 
     const buffer = await getFromVultr(key);
 
-    let threadId = jobThreadId;
-    if (!threadId && clientId) {
-        threadId = await getClientThread(clientId, 'handoff');
-        if (!threadId && backboard.getAssistantId('handoff')) {
+    // ── Handoff thread (briefing agent) ──────────────────────────────────────
+    let handoffThreadId = jobThreadId;
+    if (!handoffThreadId && clientId) {
+        handoffThreadId = await getClientThread(clientId, 'handoff');
+        if (!handoffThreadId && backboard.getAssistantId('handoff')) {
             const created = await backboard.createThread(backboard.getAssistantId('handoff'));
-            threadId = created.thread_id;
-            await setClientThread(clientId, 'handoff', threadId);
+            handoffThreadId = created.thread_id;
+            await setClientThread(clientId, 'handoff', handoffThreadId);
         }
     }
 
-    if (threadId) {
-        await backboard.uploadDoc(threadId, buffer, filename);
+    if (handoffThreadId) {
+        await backboard.uploadDoc(handoffThreadId, buffer, filename);
+        console.log(`[documentWorker] Uploaded "${filename}" to handoff thread ${handoffThreadId}`);
+    }
+
+    // ── Family thread (family update agent) — patient-specific documents only ─
+    if (clientId && backboard.getAssistantId('family')) {
+        try {
+            let familyThreadId = await getClientThread(clientId, 'family');
+            if (!familyThreadId) {
+                const created = await backboard.createThread(backboard.getAssistantId('family'));
+                familyThreadId = created.thread_id;
+                await setClientThread(clientId, 'family', familyThreadId);
+            }
+            await backboard.uploadDoc(familyThreadId, buffer, filename);
+            console.log(`[documentWorker] Uploaded "${filename}" to family thread ${familyThreadId}`);
+        } catch (familyErr) {
+            // Non-fatal: handoff upload already succeeded; just log
+            console.warn(`[documentWorker] Family thread upload failed (non-fatal): ${familyErr.message}`);
+        }
     }
 });
 

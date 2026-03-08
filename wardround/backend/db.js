@@ -89,6 +89,11 @@ export async function updateClient(clientId, { name, dateOfBirth, medications, c
     return rows[0] ?? null;
 }
 
+/** Delete a client and all associated data (cascade via FK). */
+export async function deleteClient(clientId) {
+    await pool.query(`DELETE FROM clients WHERE id = $1`, [clientId]);
+}
+
 // ── Visits ────────────────────────────────────────────────────────────────────
 
 /** Save a visit log entry. */

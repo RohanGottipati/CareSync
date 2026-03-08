@@ -44,7 +44,7 @@ const features = [
     icon: <Heart size={20} className="text-pink-600" />,
     bg: "bg-pink-50",
     title: "Emotional Wellbeing Tracking",
-    desc: "Beyond medications, WardRound captures mood, engagement, and comfort across every visit so you always have the full picture.",
+    desc: "Beyond medications, CareSync captures mood, engagement, and comfort across every visit so you always have the full picture.",
   },
   {
     icon: <FileText size={20} className="text-amber-600" />,
@@ -101,7 +101,7 @@ export default function AboutFamily() {
             custom={2}
             className="text-blue-100 text-lg leading-relaxed mb-8 max-w-xl mx-auto"
           >
-            WardRound connects you to your loved one's care — with real-time
+            CareSync connects you to your loved one's care — with real-time
             updates, secure records, and personalised messages that give you
             confidence every single day, no matter the distance.
           </motion.p>
@@ -163,7 +163,7 @@ export default function AboutFamily() {
               Transparent care, every step of the way
             </h2>
             <p className="text-gray-500 mt-3 max-w-xl">
-              WardRound keeps families connected to the care that matters most
+              CareSync keeps families connected to the care that matters most
               — with privacy, clarity, and warmth at every touchpoint.
             </p>
           </motion.div>
@@ -254,7 +254,7 @@ export default function AboutFamily() {
             Your loved one deserves the best care.
           </h2>
           <p className="text-rose-100 mb-7 text-base">
-            Join over 1,200 families who trust WardRound to keep them informed,
+            Join over 1,200 families who trust CareSync to keep them informed,
             connected, and at ease.
           </p>
           <button
