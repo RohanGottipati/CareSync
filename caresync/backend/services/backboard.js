@@ -47,16 +47,6 @@ export async function createThread(assistantId) {
 }
 
 /**
- * Alias for createThread — kept for backwards compatibility with clients.js.
- * @param {string} assistantId
- * @returns {Promise<string>} thread_id
- */
-export async function createClientThread(assistantId) {
-  const result = await createThread(assistantId);
-  return result.thread_id;
-}
-
-/**
  * Write a fact into the thread's persistent memory (memory mode "On").
  * Use after a visit or when recording client info so future Handoff/Sentinel runs have context.
  * @param {string} threadId - Backboard thread ID
@@ -135,11 +125,4 @@ export async function uploadDoc(threadId, fileBuffer, filename) {
     throw new Error(`Backboard uploadDoc failed: ${res.status} ${err}`);
   }
   return res.json();
-}
-
-/**
- * Alias for uploadDoc — kept for backwards compatibility with documents route.
- */
-export async function uploadDocumentToRAG(assistantId, fileBuffer, filename) {
-  return uploadDoc(assistantId, fileBuffer, filename);
 }

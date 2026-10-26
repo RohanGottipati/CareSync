@@ -108,15 +108,6 @@ export async function createVisit({ clientId, pswUserId, notes, sessionType }) {
     return rows[0];
 }
 
-/** Get all visits for a client. */
-export async function getVisitsByClient(clientId) {
-    const { rows } = await pool.query(
-        'SELECT * FROM visits WHERE client_id = $1 ORDER BY logged_at DESC',
-        [clientId]
-    );
-    return rows;
-}
-
 /** Get visits for a client within a date range (used by nightly family summary cron). */
 export async function getVisitsByClientForDate(clientId, date) {
     const { rows } = await pool.query(
@@ -225,24 +216,6 @@ export async function createAssignment({ clientId, pswUserId, shiftStart, shiftE
         [clientId, pswUserId, shiftStart, shiftEnd, setBy]
     );
     return rows[0];
-}
-
-/**
- * Get all active assignments for a PSW right now (shift covers current time).
- * @param {string} pswUserId - Auth0 user ID
- */
-export async function getActiveAssignmentsForPsw(pswUserId) {
-    const { rows } = await pool.query(
-        `SELECT a.*, c.name AS client_name, c.medications, c.conditions, c.notes AS client_notes
-         FROM assignments a
-         JOIN clients c ON c.id = a.client_id
-         WHERE a.psw_user_id = $1
-           AND a.shift_start <= NOW()
-           AND a.shift_end >= NOW()
-         ORDER BY a.shift_start`,
-        [pswUserId]
-    );
-    return rows;
 }
 
 /**
