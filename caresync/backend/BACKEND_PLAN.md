@@ -19,7 +19,7 @@
 
 | Step | What was done |
 |------|----------------|
-| **Backend init** | Node/Express in `caresync/backend` with **express**, **cors**, **dotenv**, **bull**, **ioredis**, **@aws-sdk/client-s3**, **@aws-sdk/s3-request-presigner**, **express-oauth2-jwt-bearer**, **multer**, **node-cron**, **pg**, **resend**. |
+| **Backend init** | Node/Express in `caresync/backend` with **express**, **cors**, **dotenv**, **bull**, **@aws-sdk/client-s3**, **express-oauth2-jwt-bearer**, **multer**, **node-cron**, **pg**, **resend**. |
 | **Vultr storage** | `services/vultrStorage.js`: S3-compatible client for Vultr Object Storage — upload and download objects. |
 | **Queue** | `queue.js`: Bull queue `caresync:documents` backed by Redis for async document processing. |
 | **Backboard** | `services/backboard.js`: createThread, writeMemory, runAgent, uploadDoc; agent types handoff / sentinel / family. |

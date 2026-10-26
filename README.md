@@ -47,6 +47,7 @@ Frontend (Vercel)          Backend (Vultr VPS)            External Services
 ## Project Structure
 
 ```
+vercel.json                     # Vercel build config (builds caresync/frontend) + rewrites
 caresync/
 ├── backend/                    # Node.js + Express API
 │   ├── server.js               # Entry point: CORS, route mounting, schema init, worker + cron start
@@ -104,7 +105,7 @@ caresync/
 
 ## Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 20+ and npm (Tailwind CSS 4, Resend, and the AWS SDK require Node 20)
 - A PostgreSQL database (local or Vultr Managed PostgreSQL) — the server requires `DATABASE_URL` and creates its tables on startup
 - An Auth0 tenant with an SPA application, an API (audience), a Machine-to-Machine app for the admin routes, the roles `psw`, `family`, `coordinator`, with the user's roles added to the `https://wardround.app/roles` access-token claim (e.g. via an Auth0 Action)
 - A Backboard.io API key and three assistants (Handoff, Sentinel, Family)
@@ -226,6 +227,6 @@ Key production `.env` settings:
 
 ### Frontend — Vercel
 
-Deploy `caresync/frontend` to Vercel. `vercel.json` rewrites `/api/*` to the backend VPS (avoiding mixed content between the HTTPS frontend and HTTP backend) and serves `index.html` for all other routes.
+The Vercel project builds from the repository root. The root `vercel.json` installs and builds `caresync/frontend` and serves `caresync/frontend/dist`; it also rewrites `/api/*` to the backend VPS (avoiding mixed content between the HTTPS frontend and HTTP backend) and serves `index.html` for all other routes. `caresync/frontend/vercel.json` holds the same rewrites for CLI deploys run from `caresync/frontend` (or a project whose Root Directory is set to `caresync/frontend`); keep the two in sync.
 
 Set `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, and `VITE_AUTH0_AUDIENCE` in Vercel. Leave `VITE_API_URL` unset so `useApi.js` uses `/api`.
