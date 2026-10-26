@@ -35,8 +35,6 @@ const MARGARET_PROFILE = {
     ]),
 };
 
-const SESSION_TYPES = ['Morning', 'Afternoon', 'Evening', 'Medication round', 'Personal care'];
-
 const VISIT_TEMPLATES = [
     {
         session_type: 'Morning',

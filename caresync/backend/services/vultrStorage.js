@@ -20,9 +20,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
-  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 
 const bucket = process.env.VULTR_STORAGE_BUCKET || 'wardround-documents';
@@ -78,16 +76,6 @@ export async function uploadToVultr(fileBuffer, key, contentType = 'application/
 }
 
 /**
- * Generate a signed (temporary) URL to download a private object. Use when bucket is not public.
- * @param {string} key - Object key
- * @param {number} [expiresIn = 3600] - URL validity in seconds
- */
-export async function getSignedDownloadUrl(key, expiresIn = 3600) {
-  const command = new GetObjectCommand({ Bucket: bucket, Key: key });
-  return getSignedUrl(s3, command, { expiresIn });
-}
-
-/**
  * Download an object from the bucket (e.g. for worker to send to Backboard).
  * @param {string} key - Object key
  * @returns {Promise<Buffer>}
@@ -98,13 +86,4 @@ export async function getFromVultr(key) {
   const chunks = [];
   for await (const chunk of response.Body) chunks.push(chunk);
   return Buffer.concat(chunks);
-}
-
-/**
- * Delete an object from the bucket.
- * @param {string} key - Object key
- */
-export async function deleteFromVultr(key) {
-  const command = new DeleteObjectCommand({ Bucket: bucket, Key: key });
-  await s3.send(command);
 }

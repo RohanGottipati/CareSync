@@ -1,15 +1,12 @@
 import React from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
   ClipboardList,
   ShieldAlert,
   Stethoscope,
   BrainCircuit,
   CheckCircle2,
-  ChevronRight,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -19,13 +16,6 @@ const fadeUp = {
     transition: { duration: 0.5, delay: i * 0.1, ease: "easeOut" },
   }),
 };
-
-const stats = [
-  { value: "10k+", label: "Care Hours Logged" },
-  { value: "99.9%", label: "Safety Accuracy" },
-  { value: "500+", label: "Active Clients" },
-  { value: "100%", label: "AI Reliability" },
-];
 
 const features = [
   {
@@ -62,8 +52,6 @@ const steps = [
 ];
 
 export default function AboutPSW() {
-  const navigate = useNavigate();
-
   return (
     <div className="bg-white min-h-screen">
       {/* ─── HERO ─── */}

@@ -1,0 +1,9 @@
+{
+  "installCommand": "npm ci --prefix caresync/frontend",
+  "buildCommand": "npm run build --prefix caresync/frontend",
+  "outputDirectory": "caresync/frontend/dist",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "http://155.138.130.192:4000/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

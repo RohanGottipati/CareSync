@@ -1,15 +1,12 @@
 import React from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
   BarChart3,
   Users2,
   ShieldCheck,
   Zap,
   CheckCircle2,
-  ChevronRight,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -19,13 +16,6 @@ const fadeUp = {
     transition: { duration: 0.5, delay: i * 0.1, ease: "easeOut" },
   }),
 };
-
-const stats = [
-  { value: "250+", label: "Caregivers Managed" },
-  { value: "Instant", label: "Flag Resolution" },
-  { value: "0", label: "Missed Audits" },
-  { value: "Auto", label: "Compliance Engine" },
-];
 
 const features = [
   {
@@ -62,8 +52,6 @@ const steps = [
 ];
 
 export default function AboutCoordinator() {
-  const navigate = useNavigate();
-
   return (
     <div className="bg-white min-h-screen">
       {/* ─── HERO ─── */}

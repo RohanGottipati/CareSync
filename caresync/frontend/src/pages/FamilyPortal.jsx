@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 import { useApi } from '../useApi';
 import DocumentUpload from '../components/DocumentUpload';
 
@@ -19,7 +18,6 @@ function formatSummaryDate(dateStr) {
 }
 
 export default function FamilyPortal() {
-    const { user } = useAuth0();
     const { fetchWithAuth } = useApi();
 
     const [clients, setClients] = useState([]);
